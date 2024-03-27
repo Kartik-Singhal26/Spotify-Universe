@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #191414; /* Spotify's background color */
+            color: #ffffff; /* Light text color for better readability */
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* Spotify's font style */
+        }
+        
+        .container {
+            max-width: 400px; /* Restrict the container width for a more focused layout */
+            margin-top: 10vh; /* Center the container vertically */
+            padding: 20px;
+            border-radius: 4px;
+            background-color: #282828; /* Slightly lighter background for the container */
+        }
+        
+        h1 {
+            font-weight: 700; /* Bold font for the title */
+            margin-bottom: 20px;
+        }
+        
+        p {
+            font-size: 16px; /* Slightly larger font for legibility */
+            margin-bottom: 30px;
+        }
+        
+        .btn-primary {
+            background-color: #1db954; /* Spotify's vibrant green for the primary action */
+            border: none; /* Remove default border */
+            padding: 10px 20px; /* Increase padding for a larger, more clickable area */
+            font-size: 16px; /* Make the button text slightly larger */
+            transition: background-color 0.2s; /* Smooth transition for hover effect */
+        }
+        
+        .btn-primary:hover {
+            background-color: #1ed760; /* A lighter green on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="container text-center">
+        <h1>Welcome to the Spotify Flask App</h1>
+        <p>Please sign in to continue.</p>
+        <a class="btn btn-primary" href="/login">Sign In with Spotify</a>
+    </div>
+</body>
+</html>
