@@ -1,6 +1,5 @@
 from flask import request, redirect, session, url_for, render_template, jsonify
-from app import app, auth_manager
-from app.utils import fetch_and_cache_playlists, calculate_user_stats
+from app import app, auth_manager, utils
 import spotipy
 import uuid
 import logging
@@ -9,13 +8,14 @@ import os
 from datetime import timedelta
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Setup base directory and paths
 basedir = os.path.abspath(os.path.dirname(__file__))
 project_basedir = os.path.join(basedir, os.pardir)
 token_info_path = os.path.join(project_basedir, 'token_info.json')
-json_file_path = os.path.join(project_basedir, 'playlists_data.json')
+json_file_path = os.path.join(project_basedir, 'user_data.json')
 
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
@@ -26,11 +26,13 @@ def ensure_session_uuid():
         session['uuid'] = str(uuid.uuid4())
         logging.info("Session UUID created: %s", session['uuid'])
 
+
 @app.route('/signin')
 def signin():
     """Renders the sign-in page."""
     logging.info("Rendering signin page.")
     return render_template("signin.html")
+
 
 @app.route('/')
 def home():
@@ -39,9 +41,7 @@ def home():
     token_info = auth_manager.get_cached_token()
     if token_info:
         logging.info("Token found, rendering home page.")
-        user_info = sp.current_user()
-        user_stats = calculate_user_stats(sp)
-        return render_template('home.html', user_info=user_info, user_stats=user_stats)
+        return render_template('home.html')
     else:
         logging.info("No token found, redirecting to login page.")
         return redirect(url_for('signin'))
@@ -52,10 +52,12 @@ def login():
     logging.info("Attempting login.")
     if not auth_manager.get_cached_token():
         auth_url = auth_manager.get_authorize_url(state=session['uuid'])
-        logging.info("No cached token, redirecting to Spotify for authentication.")
+        logging.info(
+            "No cached token, redirecting to Spotify for authentication.")
         return redirect(auth_url)
     logging.info("Token already cached, redirecting to home.")
     return redirect(url_for('home'))
+
 
 @app.route('/callback')
 def callback():
@@ -68,6 +70,7 @@ def callback():
     logging.info("Access token retrieved and cached successfully.")
     return redirect(url_for('home'))
 
+
 @app.route('/logout')
 def logout():
     """Logs out the user by clearing the session and removing the token info file."""
@@ -77,14 +80,14 @@ def logout():
         if 'token_info' in session:
             session.pop('token_info', None)
             logging.info("Token info cleared from session.")
-            
+
         # Remove the token info file
         if os.path.exists(token_info_path):
             os.remove(token_info_path)
             logging.info("Token info file successfully removed.")
     except Exception as e:
         logging.error(f"Error during logout: {e}")
-    
+
     # Clear the entire session
     session.clear()
     logging.info("Session cleared.")
@@ -92,76 +95,188 @@ def logout():
     # Redirect the user to the sign-in page
     return redirect(url_for('signin'))
 
-@app.route('/get-playlist-details/<playlist_id>', methods=['GET'])
-def get_playlist_details(playlist_id):
-    """Fetches details for a specific playlist given its ID. Returns a JSON object with playlist details."""
-    try:
-        playlist = sp.playlist(playlist_id)
-        playlist_details = {
-            'name': playlist['name'],
-            'description': playlist['description'],
-            'owner': playlist['owner']['display_name'],
-            'total_tracks': playlist['tracks']['total']
-        }
-        return jsonify(playlist_details)
-    except Exception as e:
-        logging.error(f"Failed to fetch playlist details: {e}")
-        return jsonify({'error': str(e)}), 404
-
-@app.route('/get-playlists')
-def get_playlist_data():
-    """Endpoint to retrieve the current user's playlists data."""
-    try:
-        playlists_data = fetch_and_cache_playlists(sp, auth_manager, json_file_path)
-        if playlists_data:
-            return jsonify(playlists_data)
-        else:
-            logging.error("Playlists data is empty.")
-            return jsonify({'error': 'Failed to fetch playlists - Data is empty'}), 500
-    except Exception as e:
-        logging.error(f"Failed to fetch playlists: {e}")
-        return jsonify({'error': 'Failed to fetch playlists'}), 500
-
-@app.route('/get-tracks/<playlist_id>', methods=['GET'])
-def get_tracks(playlist_id):
-    """Fetches tracks from the specified playlist by its ID.
-
-    Args:
-        playlist_id (str): The ID of the playlist to fetch tracks from.
-
-    Returns:
-        flask.Response: A JSON response containing the fetched tracks.
-
-    Raises:
-        Exception: If there is an error while fetching the tracks.
+@app.route('/get-user-details/', methods=['GET'])
+def get_user_account_details():
+    """
+    Endpoint to get Spotify user details.
     """
     try:
-        results = sp.playlist_tracks(playlist_id)
-        simplified_tracks = []
-        for item in results['items']:
-            track = item.get('track')
-            if track and track.get('duration_ms', 0) != 0:
-                images = track.get('album', {}).get('images', [])
-                image_url = images[0].get('url', 'default_image_url') if images else 'default_image_url'
-                
-                simplified_track = {
-                    'name': track.get('name', ''),
-                    'artist': ', '.join(artist['name'] for artist in track.get('artists', [])),
-                    'album': track.get('album', {}).get('name', ''),
-                    'duration_ms': track.get('duration_ms', 0),
-                    'spotify_url': track.get('external_urls', {}).get('spotify', ''),
-                    'image_url': image_url
-                }
-                simplified_tracks.append(simplified_track)
+        # Call the current_user() method to fetch the user's details
+        user_info = sp.current_user()
+        
+        # Assuming you want to return some basic information about the user
+        user_details = {
+            'display_name': user_info.get('display_name'),
+            'email': user_info.get('email'),
+            'id': user_info.get('id'),
+            'country': user_info.get('country'),
+            'followers': user_info.get('followers', {}).get('total', 0)
+        }
+
+        logging.info("Successfully fetched user details.")
+        return jsonify(user_details), 200
+
+    except Exception as e:
+        logging.error(f"Failed to fetch user details: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get-all-playlists')
+def get_all_playlist_data():
+    """
+    Endpoint to retrieve the current user's playlists data from the cache.
+    If cache is empty or outdated, fetches from Spotify and updates the cache.
+    """
+    try:
+        # Attempt to retrieve playlist data from the cache first
+        playlists_data = utils.get_all_playlist_data_from_cache()
+
+        # If the cache was empty or outdated, fetch from Spotify and update the cache
+        if not playlists_data:
+            logging.info("Cache is empty or outdated, fetching playlists data from Spotify.")
+            playlists_data = utils.ensure_cache_data_freshness(sp, auth_manager, json_file_path)
+
+            # After fetching and caching, retrieve the updated data from the cache
+            playlists_data = utils.get_all_playlist_data_from_cache()
+
+        if playlists_data:
+            logging.info("Playlists data retrieved successfully.")
+            return jsonify(playlists_data)
+        else:
+            logging.error("Playlists data is empty after attempting to fetch and cache.")
+            return jsonify({'error': 'Failed to fetch playlists - Data is empty after update'}), 500
+    except Exception as e:
+        logging.error(f"Failed to fetch playlists: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get-playlist/<playlist_id>')
+def get_playlist_by_id(playlist_id):
+    """
+    Endpoint to retrieve data for a specific playlist by its ID.
+    If the playlist data is not in the cache or is outdated, fetches from Spotify and updates the cache.
+    """
+    try:
+        # Attempt to retrieve specific playlist data from the cache first
+        playlist_data = utils.get_playlist_data_by_id_from_cache(playlist_id)
+
+        # If the cache was empty or outdated, fetch from Spotify and update the cache
+        if not playlist_data:
+            logging.info(f"Cache is empty or outdated for playlist ID {playlist_id}, fetching data from Spotify.")
+            utils.ensure_cache_data_freshness(sp, auth_manager, json_file_path)
+
+            # After fetching and caching, retrieve the updated data from the cache
+            playlist_data = utils.get_playlist_data_by_id_from_cache(playlist_id)
+
+        if playlist_data:
+            logging.info(f"Playlist data for ID {playlist_id} retrieved successfully.")
+            return jsonify(playlist_data)
+        else:
+            logging.error(f"Playlist data is empty for ID {playlist_id} after attempting to fetch and cache.")
+            return jsonify({'error': f'Failed to fetch playlist for ID {playlist_id} - Data is empty after update'}), 500
+    except Exception as e:
+        logging.error(f"Failed to fetch playlist for ID {playlist_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/playlist-metrics/<playlist_id>', methods=['GET'])
+def playlist_metrics(playlist_id):
+    """
+    Endpoint to retrieve metrics for a specific playlist by its ID.
+    """
+    try:
+        metrics = utils.get_playlist_metric_by_id(playlist_id)
+        if metrics:
+            logging.info(f"Metrics for playlist ID {playlist_id} retrieved successfully.")
+            return jsonify(metrics)
+        else:
+            return jsonify({'error': f'Failed to calculate metrics for playlist ID {playlist_id}'}), 500
+    except Exception as e:
+        logging.error(f"Failed to fetch metrics for playlist {playlist_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/get-all-tracks-for-playlist/<playlist_id>', methods=['GET'])
+def get_all_tracks_for_palylist(playlist_id):
+    """
+    Fetches tracks from the specified playlist by its ID, utilizing cache.
+    """
+    try:
+        # Attempt to get tracks data from the cache
+        simplified_tracks = utils.get_playlist_wise_tracks_information_from_cache(playlist_id)
+        
+        # If cache miss, refresh cache data and attempt to fetch again
+        if simplified_tracks is None:
+            logging.info(f"Cache miss for playlist ID {playlist_id}. Refreshing cache.")
+            utils.ensure_cache_data_freshness(sp)
+            
+            # Attempt to retrieve the data again after refreshing cache
+            simplified_tracks = utils.get_playlist_wise_tracks_information_from_cache(playlist_id)
+            if simplified_tracks is None:
+                # If still None, then there was an issue with caching or fetching data
+                logging.error(f"Unable to retrieve tracks for playlist ID {playlist_id} after cache refresh.")
+                return jsonify({'error': 'Failed to fetch tracks for the playlist'}), 500
+
+        # Successfully retrieved data
+        logging.info(f"Tracks for playlist ID {playlist_id} retrieved successfully.")
         return jsonify(simplified_tracks)
     except Exception as e:
         logging.error(f"Failed to fetch tracks for playlist {playlist_id}: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/get-all-tracks-for_user')
+def get_all_tracks_data():
+    """
+    Endpoint to retrieve the current user's tracks data from the cache.
+    If cache is empty or outdated, fetches from Spotify and updates the cache.
+    """
+    try:
+        # Attempt to retrieve playlist data from the cache first
+        tracks_data = utils.get_all_tracks_data_from_cache()
+
+        # If the cache was empty or outdated, fetch from Spotify and update the cache
+        if not tracks_data:
+            logging.info("Cache is empty or outdated, fetching Tracks data from Spotify.")
+            tracks_data = utils.ensure_cache_data_freshness(sp, auth_manager, json_file_path)
+
+            # After fetching and caching, retrieve the updated data from the cache
+            tracks_data = utils.get_all_tracks_data_from_cache()
+
+        if tracks_data:
+            logging.info("Tracks data retrieved successfully.")
+            return jsonify(tracks_data)
+        else:
+            logging.error("Tracks data is empty after attempting to fetch and cache.")
+            return jsonify({'error': 'Failed to fetch Tracks - Data is empty after update'}), 500
+    except Exception as e:
+        logging.error(f"Failed to fetch Tracks: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get-track/<track_id>', methods=['GET'])
+def get_track_by_id(track_id):
+    """
+    Fetches details for a specific track by its Spotify ID, utilizing cache. if not found in cache, searches spotify
+    """
+    try:
+        # Attempt to get track data from the cache
+        track_info = utils.get_track_information_from_cache(track_id)
+
+        # If cache miss, refresh cache data and attempt to fetch again
+        if track_info is None:
+            logging.info(f"Cache miss for track ID {track_id}. Checking Spotify.")
+            track_info = utils.fetch_track_by_id_from_spotify(track_id)
+
+            if track_info is None:
+                logging.error(f"Unable to retrieve track for ID {track_id} from spotify.")
+                return jsonify({'error': f'Failed to fetch track for ID {track_id}'}), 500
+
+        logging.info(f"Track for ID {track_id} retrieved successfully.")
+        return jsonify(track_info)
+    except Exception as e:
+        logging.error(f"Failed to fetch track for ID {track_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/refresh_token')
 def refresh_token():
     try:
-        token_info = auth_manager.refresh_access_token(session.get('token_info').get('refresh_token'))
+        token_info = auth_manager.refresh_access_token(
+            session.get('token_info').get('refresh_token'))
         session['token_info'] = token_info  # Update session with new token
         return jsonify(success=True)
     except Exception as e:
@@ -171,14 +286,15 @@ def refresh_token():
 @app.before_request
 def make_session_permanent():
     session.permanent = True  # Make the user session persistent
-    app.permanent_session_lifetime = timedelta(minutes=60)  # Adjust as necessary
-
+    app.permanent_session_lifetime = timedelta(
+        minutes=60)  # Adjust as necessary
 
 @app.errorhandler(Exception)
 def handle_exception(e):
     """Catches unhandled exceptions and logs them, returning a generic error page."""
     logging.error("Unhandled exception: %s", e)
     return render_template("error.html", error=str(e)), 500
+
 
 @app.errorhandler(HTTPException)
 def handle_http_exception(e):
