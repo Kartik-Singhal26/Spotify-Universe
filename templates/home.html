@@ -17,25 +17,31 @@
         overflow-y: hidden;
       }
 
-      .container {
-        padding-top: 10px;
-        width: 100%;
-        margin: auto;
-        padding-bottom: 5px;
-      }
+    .main-container {
+      max-width: 95vw; /* 90% of the viewport width */
+      max-height: 95vh; /* 90% of the viewport height */
+      width: 100%; /* Make it responsive */
+      height: auto; /* Height will be dictated by content up to max-height */
+      margin: auto; /* Center it on the page */
+      padding: 20px; /* Add some space inside the container */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Add some shadow for depth */
+      display: flex; /* Makes direct children flex items */
+      flex-direction: column; /* Stack children vertically */
+      overflow: auto; /* Prevents overflow */
+    }
 
-      .scrollable-container {
-        max-height: 500px;
-        overflow-y: auto;
-        background-color: #181818;
-        padding: 5px;
-        border-radius: 5px;
-        width: 100%; /* Same width as .container */
-        margin: auto; /* Center the container */
-        border: 1px solid #1b1d1b; /* Aesthetic border */
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Optional: Add a shadow effect */
-      }
-
+    .scrollable-container {
+      flex-grow: 1; /* Takes up as much space as possible inside the flex container */
+      overflow-y: scroll; /* Adds a scrollbar if necessary */
+      max-height: 100%; /* Limit the height to allow scrolling */
+      background-color: #181818;
+      padding: 5px;
+      margin-bottom: auto; /* Give some space at the bottom */
+      border-radius: 5px;
+      border: 1px solid #1b1d1b; /* Aesthetic border */
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Optional: Add a shadow effect */
+      box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+    }
       .scrollable-container::-webkit-scrollbar {
         width: 12px;
       }
@@ -64,24 +70,31 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-radius: 5px;
       }
 
       .list-group-item:hover,
       .list-group-item:focus {
-        background-color: #76a587;
+        background-color: #181818;
         color: #ffffff;
-      }
+        border: 0.5px solid #1db954 !important; /* Override to indicate selection */
+        box-shadow: 0 0 px #1db954;      }
 
       h1,
       h2 {
         color: #ffffff;
       }
 
+      h1, p {
+          line-height: 1.5; /* Or any other value that works */
+      }
+
       a,
       .list-group-item:hover a,
       .list-group-item:focus a {
-        color: #76a587;
+        color: #1db954;
         text-decoration: none;
+        
       }
 
       a:hover {
@@ -126,34 +139,51 @@
         margin: 20px 0;
       }
 
-      /* Adjusting carousel height and icons */
       .carousel-item {
-        height: 200px;
-        overflow: hidden;
-      }
-
-      .carousel-item img {
-        width: auto;
-        height: 80%;
-        margin: 0 auto;
-        opacity: 0.5;
-        transition: opacity 0.3s ease;
+        height: 150px; /* Adjust to your desired height */
+        max-width: 100%;
+        max-height: fit-content;
+        justify-content: center;
+        align-content: center;
+        align-self: center;
+        align-items: center;
+        overflow:hidden; /* Add this to prevent images from overlapping the container */
       }
 
       .carousel-item:hover img {
-        opacity: 1;
+        opacity: 1; /* Full opacity on hover */
+        
       }
 
       /* CSS Styles */
       /* Adjusting playlist items */
       .playlist-item {
+        max-width: 120%;
+        max-height: 120%;
         position: relative; /* Set position to relative */
-        bottom: 0%; /* Align playlist items to the bottom of carousel item */
-        left: 50%; /* Center playlist item horizontally */
-        transform: translateX(-50%); /* Adjust for centering */
-        transition: border-color 0.3s ease; /* Smooth transition for border color change */
+        align-self: center;
+        justify-self: center;
+        left: 80%;
+        bottom: -10%;
+        transform: translateX(-60%); /* Adjust for centering */
+        transition: border-color 0.3s ease, transform 0.3s ease; /* Smooth transition for border color and transform changes */
         cursor: pointer; /* Change cursor to pointer on hover */
         border-radius: 2px; /* Add border radius */
+      }
+
+      .playlist-item img {
+        width: 100%;        /* Adjust width as needed */
+        height: 100%;        /* Maintain the aspect ratio */
+        border-radius: 5px; /* Adjust this value to get the desired roundness of corners */
+        transition: transform 0.3s ease, border-radius 0.3s ease; /* Smooth transitions for scaling and border-radius */
+        display: block;      /* Images are block level to take the width property into account */
+        object-fit: cover;   /* This will cover the area without stretching the image */
+      }
+
+      .playlist-item:hover img {
+        transform: scale(1.1); /* Scale up image by 10% on hover */
+        border: 1px solid #1db954 !important; /* Override to indicate selection */
+        box-shadow: 0 0 15px #1db954;
       }
 
       /* Add green border to selected playlist */
@@ -217,103 +247,96 @@
         margin-bottom: 0; /* Remove margin-bottom to save space */
       }
       .row.fixed-container {
-            display: flex;
-            flex-wrap: nowrap;
-            height: calc(100vh - 80px); /* Adjust based on your header/footer height */
-            overflow: hidden;
-        }
+        display: flex;
+        flex-wrap: nowrap;
+        height: calc(100vh - 80px); /* Adjust based on your header/footer height */
+        overflow: hidden;
+      }
 
-        #playlistDetails {
-            flex: 0 0 300px; /* Adjust width of the sidebar */
-            height: 100%;
-            overflow-y: auto; /* Enable scrolling for sidebar */
-            position: sticky;
-            top: 80px; /* Adjust based on your header height */
-            padding: 15px;
-            background-color: #282828;
-            border-right: 2px solid rgba(255, 255, 255, 0.1);
-        }
+      #playlistDetails {
+        flex: 2; /* 40% */
+        height: 100%;
+        overflow-y: auto;
+        position: sticky;
+        top: 80px;
+        padding: 5px;
+        background-color: #282828;
+        border-right: 2px solid rgba(255, 255, 255, 0.1);
+      }
 
-        #tracksContainer {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 15px;
-            height: 100%;
-        }
+      #tracksContainer {
+        flex: 8; /* 60% */
+        overflow-y: auto; /* Adjusted to 'auto' to show scrollbar as needed */
+        padding: 15px;
+        height: 100%; /* Ensure the height is limited to trigger scrolling */
+        width: auto;
+      }
 
-        /* Scrollbar customization */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
+      /* Scrollbar customization */
+      ::-webkit-scrollbar {
+          width: 8px;
+      }
 
-        ::-webkit-scrollbar-track {
-            background: #0e0e0e;
-        }
+      ::-webkit-scrollbar-track {
+          background: #0e0e0e;
+      }
 
-        ::-webkit-scrollbar-thumb {
-            background: #1db954;
-            border-radius: 4px;
-        }
+      ::-webkit-scrollbar-thumb {
+          background: #1db954;
+          border-radius: 4px;
+      }
 
-        /* Adjust for smaller screens */
-        @media (max-width: 768px) {
-            .row.fixed-container {
-                flex-wrap: wrap;
-                height: auto;
-            }
+      /* Adjust for smaller screens */
+      @media (max-width: 768px) {
+          .row.fixed-container {
+              flex-wrap: wrap;
+              height: auto;
+          }
 
-            #playlistDetails {
-                position: relative;
-                top: 0;
-                height: auto;
-                flex: 0 0 100%;
-            }
+          #playlistDetails {
+              position: relative;
+              top: 0;
+              height: auto;
+              flex: 0 0 100%;
+          }
 
-            #tracksContainer {
-                flex: 0 0 100%;
-            }
-        }
+          #tracksContainer {
+              flex: 0 0 100%;
+          }
+      }
 
     </style>
   </head>
   <body>
-    <div class="container mt-3">
+    <div class="main-container mt-3">
         <div class="row">
             <!-- User Info and Stats Row -->
             <div class="col-md-12 mb-2">
-                <div
-                    class="bg-dark text-light py-3 px-4 rounded"
-                    style="background-color: #1db954; position: relative;"
-                >
-                    <div class="user-info-header d-flex justify-content-between align-items-end">
-                        <div>
-                            <h1 class="h4 mb-1" style="color: #ffffff;">
-                                Welcome, {{ user_info.get('display_name', 'User') }}!
-                            </h1>
-                            <p class="lead my-2" style="color: #191414; font-size: 1rem;">
-                                To Your Music Universe
-                            </p>
-                        </div>
-                        <div>
-                            <a href="/logout" class="btn btn-dark" style="background-color: #191414; border-color: #333;">Logout</a>
-                        </div>
+              <div class="bg-dark text-light py-3 px-4 rounded" style="background-color: #1db954; position: relative;">
+                <div class="user-info-header d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <h1 class="h4 mb-0" style="color: #ffffff;">Welcome, {{ user_info.get('display_name', 'User') }}! <span class="lead mb-0" style="color: #0e0e0e; font-size: 1rem;">  to your music universe</span></h1>
+                  </div>
+                    <div>
+                        <a href="/logout" class="btn btn-dark" style="background-color: #1db954; border-color: #333;">Logout</a>
                     </div>
+                </div>
                     <div class="user-stats text-light d-flex justify-content-start">
-                        <p><i class="fas fa-play-circle"></i> <strong>{{ user_stats['num_playlists'] }}</strong> public playlists</p>
-                        <p><i class="fas fa-music"></i> <strong>{{ user_stats['num_unique_tracks'] }}</strong> unique tracks</p>
-                        <p><i class="fas fa-user-friends"></i> <strong>{{ user_stats['num_unique_artists'] }}</strong> artists</p>
+                        <p><i class="fas fa-play-circle"></i> <strong style="color: #1db954;">{{ user_stats['num_playlists'] }}</strong> public playlists</p>
+                        <p><i class="fas fa-music"></i> <strong style="color: #1db954;">{{ user_stats['num_unique_tracks'] }}</strong> unique tracks</p>
+                        <p><i class="fas fa-user-friends"></i> <strong style="color: #1db954;">{{ user_stats['num_unique_artists'] }}</strong> artists</p>
                     </div>
                 </div>
             </div>
         </div>
       <!-- Playlist Carousels -->
       <div class="row">
-        <div class="col-lg-12">
+        <div class="col-md-12 mb-2">
           <div
             id="carouselExampleControls"
             class="carousel slide"
             data-ride="carousel"
-            data-interval="false"
+            data-interval="5000"
           >
             <div class="carousel-inner" id="playlistsContainer">
               <!-- Playlists will be loaded dynamically here -->
@@ -346,12 +369,16 @@
         </div>
       </div>
 
-      <div class="row mt-3">
-        <div id="playlistDetails" class="col-md-4 mb-4" style = "padding: 5px;">
-            <!-- Playlist details will be dynamically filled here -->
+      <div class="row mt-1">
+        <div class="col-md-3 mb-2">
+          <div id="playlistDetails">
+              <!-- Playlist details will be dynamically filled here -->
+          </div>
         </div>
-        <div id="tracksContainer" class="col-md-8 scrollable-container" style="padding: 10px;">
-            <!-- Tracks will be shown here when a playlist is selected -->
+        <div class="col-md-9 mb-2">
+          <div id="tracksContainer">
+              <!-- Tracks will be shown here when a playlist is selected -->
+          </div>
         </div>
     </div>
 
@@ -364,7 +391,7 @@
           if (playlistName) {
             // If playlist name is provided, display it in the tracks container
             $("#tracksContainer").html(
-              `<p>loading data for ${playlistName}<p><div class="text-center mt-5"><p class="mt-3">do bi do bi do baa</p></div>`
+              `<p>loading data for ${playlistName}<p><div class="text-center mt-5"></div>`
             );
           } else {
             // If playlist name is not provided, display a random music note
@@ -407,49 +434,45 @@
 
         // AJAX request to fetch playlists
         $.ajax({
-          url: "http://127.0.0.1:5000/get-playlists",
+          url: "http://127.0.0.1:5000/get-all-playlists",
           type: "GET",
           dataType: "json",
           success: function (playlists) {
             var playlistsHtml = ""; // Initialize playlists HTML
             var carouselItem;
             var carouselItemCounter = 0; // Counter for carousel items
+            var num_items_per_display = 12;
+
             playlists.forEach(function (playlist, index) {
-              if (carouselItemCounter % 6 === 0) {
-                // Start new carousel item for every 5 playlists
-                var isActive = carouselItemCounter === 0 ? "active" : ""; // Set the first item as active
+                if (carouselItemCounter % num_items_per_display === 0) {
+                    // Start new carousel item for every num_items_per_display playlists
+                    var isActive = carouselItemCounter === 0 ? "active" : ""; // Set the first item as active
+                    playlistsHtml += `
+                        <div class="carousel-item ${isActive}">
+                            <div class="row">`;
+                }
+
+                // Append each playlist item to the current carousel item
                 playlistsHtml += `
-                      <div class="carousel-item ${isActive}">
-                          <div class="row">`;
-              }
+                    <div class="col-lg-1 col-md-1 col-sm-1 mb-4">
+                        <div class="playlist-item" data-playlist-id="${playlist.id}" data-playlist-name="${playlist.name}">
+                            <img src="${playlist.image_url}" class="img-fluid" alt="${playlist.name}">
+                            <div class="carousel-caption d-none d-md-block"></div>
+                        </div>
+                    </div>`;
 
-              // Add playlist item to the current carousel item
-              playlistsHtml += `
-                  <div class="col-lg-2 col-md-6 col-sm-6 mb-4">
-                      <div class="playlist-item" data-playlist-id="${playlist.id}" data-playlist-name="${playlist.name}">
-                          <img src="${playlist.image_url}" class="img-fluid" alt="${playlist.name}">
-                          <div class="carousel-caption d-none d-md-block">
-                          </div>
-                      </div>
-                  </div>
-              `;
+                carouselItemCounter++; // Increment the counter for playlist items
 
-              carouselItemCounter++; // Increment carousel item counter
-
-              if (
-                carouselItemCounter % 6 === 0 ||
-                index === playlists.length - 1
-              ) {
-                // End carousel item when reaching 5 playlists or end of playlists
-                playlistsHtml += `
-                          </div>
-                      </div>
-                  `;
-              }
+                if (carouselItemCounter % num_items_per_display === 0 || index === playlists.length - 1) {
+                    // End the current carousel item if it reaches num_items_per_display or it's the last playlist
+                    playlistsHtml += `
+                            </div>
+                        </div>`;
+                }
             });
 
-            $("#playlistsContainer").html(playlistsHtml); // Append the playlists to the container
-          },
+            $("#playlistsContainer").html(playlistsHtml); // Replace the contents of the playlists container with the new playlists
+                      },
           error: function () {
             console.error("Error fetching playlists.");
           },
@@ -463,15 +486,24 @@
 
           // AJAX request to fetch playlist details
           $.ajax({
-            url: `http://127.0.0.1:5000/get-playlist-details/${playlistId}`,
+            url: `http://127.0.0.1:5000/get-playlist/${playlistId}`,
             type: "GET",
             dataType: "json",
             success: function (playlistDetails) {
+              var mostFeaturedArtists = playlistDetails.metrics['Most Featured Artist(s)'];
+        
+              // Check if mostFeaturedArtists is an array and join the elements into a string; otherwise, use the value directly
+              var mostFeaturedArtistsText = Array.isArray(mostFeaturedArtists) ? mostFeaturedArtists.join(', ') : mostFeaturedArtists;
+        
               var playlistDetailsHtml = `
                     <h2>${playlistName}</h2>
                     <p>${playlistDetails.description}</p>
-                    <p><strong>Owner:</strong> ${playlistDetails.owner}</p>
-                    <p><strong>Total Tracks:</strong> ${playlistDetails.total_tracks}</p>
+                    <p><strong>Total Tracks:</strong> ${playlistDetails.metrics['Track Count']}</p>
+                    <p><strong>Total Duration:</strong> ${playlistDetails.metrics['Total Duration']} hrs</p>
+                    <p><strong>Artist Diversity:</strong> ${playlistDetails.metrics['Artist Diversity']}</p>
+                    <p><strong>Most Featured Artist(s):</strong> ${mostFeaturedArtistsText}</p>
+                    <p><strong>Release Year Range:</strong> ${playlistDetails.metrics['Release Year Range']}</p>
+
                     <!-- You can add more details here as needed -->
                 `;
               $("#playlistDetails").html(playlistDetailsHtml);
@@ -486,7 +518,7 @@
 
           // AJAX request to fetch tracks for the selected playlist
           $.ajax({
-            url: `http://127.0.0.1:5000/get-tracks/${playlistId}`,
+            url: `http://127.0.0.1:5000/get-all-tracks-for-playlist/${playlistId}`,
             type: "GET",
             dataType: "json",
             success: function (tracks) {
@@ -502,7 +534,7 @@
                         <img src="${track.image_url}" alt="${track.name}" class="img-fluid mr-3" style="width: 50px; height: 50px; object-fit: cover;">
                         <div>
                             <h5 class="mb-1 text-truncate" style="max-width: 300px;">${track.name}</h5>
-                            <p class="mb-1" style="font-size: 14px;">${track.artist}</p>
+                            <p class="mb-1" style="font-size: 14px;">${track.artists}</p>
                         </div>
                     </div>
                     <div class="ml-4 text-right">

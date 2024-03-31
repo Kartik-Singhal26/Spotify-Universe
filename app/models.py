@@ -1,6 +1,5 @@
 import json
 import logging
-from spotipy import Spotify
 import os
 import time
 
@@ -74,6 +73,9 @@ class SpotifyCache:
         is_age_valid = (current_time - self.last_updated) < max_age_seconds
         
         # Check if essential data is present in the cache
-        is_data_present = bool(self.playlist_cache and self.tracks_cache and self.artists_cache)
-
+        is_data_present = all([
+            isinstance(self.playlist_cache, dict) and bool(self.playlist_cache),
+            isinstance(self.tracks_cache, dict) and bool(self.tracks_cache),
+            isinstance(self.artists_cache, dict) and bool(self.artists_cache)
+        ])
         return is_age_valid and is_data_present

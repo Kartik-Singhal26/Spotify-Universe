@@ -5,6 +5,7 @@ import uuid
 import logging
 from werkzeug.exceptions import HTTPException
 import os
+import json
 from datetime import timedelta
 
 # Configure logging
@@ -33,15 +34,22 @@ def signin():
     logging.info("Rendering signin page.")
     return render_template("signin.html")
 
-
 @app.route('/')
 def home():
-    """Handles the route to the home page. Fetches token and user information to render the home page or redirects to sign-in if no token is found."""
     logging.info("Accessing home page.")
     token_info = auth_manager.get_cached_token()
     if token_info:
         logging.info("Token found, rendering home page.")
-        return render_template('home.html')
+        user_details_response, response_code_user_details = get_user_account_details()  
+        user_stats_response, response_code_user_stats = get_user_stats()  
+
+        if response_code_user_details == 200 and response_code_user_stats == 200:
+            user_details = user_details_response.get_json()  # Extract JSON data from the response
+            user_stats = user_stats_response.get_json()  # Extract JSON data from the response
+            return render_template('home.html', user_info=user_details, user_stats=user_stats)
+        else:
+            logging.error("Failed to fetch user details or stats.")
+            return redirect(url_for('error'))  # Redirect to an error handling route
     else:
         logging.info("No token found, redirecting to login page.")
         return redirect(url_for('signin'))
@@ -120,6 +128,19 @@ def get_user_account_details():
         logging.error(f"Failed to fetch user details: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/get-user-stats/', methods=['GET'])
+def get_user_stats():
+    """
+    Route to fetch and return user statistics.
+    """
+    stats = utils.calculate_user_stats()
+    if stats is None:
+        # Handling the case where stats calculation fails
+        return jsonify({'error': 'Unable to calculate user stats'}), 500
+    
+    # If calculation is successful, return the stats
+    return jsonify(stats), 200
+
 @app.route('/get-all-playlists')
 def get_all_playlist_data():
     """
@@ -127,16 +148,15 @@ def get_all_playlist_data():
     If cache is empty or outdated, fetches from Spotify and updates the cache.
     """
     try:
+        ## Refresh Cache 
+        utils.ensure_cache_data_freshness(sp)
+
         # Attempt to retrieve playlist data from the cache first
         playlists_data = utils.get_all_playlist_data_from_cache()
 
         # If the cache was empty or outdated, fetch from Spotify and update the cache
         if not playlists_data:
             logging.info("Cache is empty or outdated, fetching playlists data from Spotify.")
-            playlists_data = utils.ensure_cache_data_freshness(sp, auth_manager, json_file_path)
-
-            # After fetching and caching, retrieve the updated data from the cache
-            playlists_data = utils.get_all_playlist_data_from_cache()
 
         if playlists_data:
             logging.info("Playlists data retrieved successfully.")
@@ -161,7 +181,7 @@ def get_playlist_by_id(playlist_id):
         # If the cache was empty or outdated, fetch from Spotify and update the cache
         if not playlist_data:
             logging.info(f"Cache is empty or outdated for playlist ID {playlist_id}, fetching data from Spotify.")
-            utils.ensure_cache_data_freshness(sp, auth_manager, json_file_path)
+            utils.ensure_cache_data_freshness(sp)
 
             # After fetching and caching, retrieve the updated data from the cache
             playlist_data = utils.get_playlist_data_by_id_from_cache(playlist_id)
@@ -204,14 +224,7 @@ def get_all_tracks_for_palylist(playlist_id):
         # If cache miss, refresh cache data and attempt to fetch again
         if simplified_tracks is None:
             logging.info(f"Cache miss for playlist ID {playlist_id}. Refreshing cache.")
-            utils.ensure_cache_data_freshness(sp)
-            
-            # Attempt to retrieve the data again after refreshing cache
-            simplified_tracks = utils.get_playlist_wise_tracks_information_from_cache(playlist_id)
-            if simplified_tracks is None:
-                # If still None, then there was an issue with caching or fetching data
-                logging.error(f"Unable to retrieve tracks for playlist ID {playlist_id} after cache refresh.")
-                return jsonify({'error': 'Failed to fetch tracks for the playlist'}), 500
+            return jsonify({'error': 'Failed to fetch tracks for the playlist'}), 500
 
         # Successfully retrieved data
         logging.info(f"Tracks for playlist ID {playlist_id} retrieved successfully.")

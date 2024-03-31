@@ -3,9 +3,11 @@ import os
 from spotipy import Spotify
 from app import auth_manager
 import numpy as np
-from models import SpotifyCache
+from app.models import SpotifyCache
+import time
+import json
 
-## Follow the followinmg sequence : define -> update(indiv) -> update(bulk) -> get (indiv) -> get(bulk) while  organizing functions 
+# Follow the followinmg sequence : define -> update(indiv) -> update(bulk) -> get (indiv) -> get(bulk) while  organizing functions
 
 # You might need to adjust these paths based on your project structure and how you manage configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -16,7 +18,9 @@ json_file_path = os.path.join(project_basedir, 'user_data.json')
 global spotify_cache
 spotify_cache = None
 
-##----------------- Application Specific -------------------##
+## ----------------- Application Specific -------------------##
+
+
 def is_current_token_valid():
     """
     Checks if the current Spotify authentication token is valid.
@@ -29,6 +33,7 @@ def is_current_token_valid():
         return False
     return True
 
+
 def initialize_global_cache():
     global spotify_cache  # Access the global cache object
     if is_current_token_valid():
@@ -37,6 +42,7 @@ def initialize_global_cache():
     else:
         logging.error(
             "Failed to initialize global Spotify cache due to authentication issues.")
+
 
 def get_spotify_cache_instance():
     """
@@ -54,80 +60,95 @@ def get_spotify_cache_instance():
         logging.error("Spotify cache is not initialized.")
         return None
 
-##----------------- User Data Specific -------------------##
+## ----------------- User Data Specific -------------------##
 
-def fetch_user_playlists_with_tracks_from_spotify(sp: Spotify):
+
+def fetch_user_playlists_with_tracks_from_spotify(sp):
     """
     Fetches playlists and their tracks for the current user from Spotify,
     and organizes the data into three structures: playlists, tracks, and artists.
-
-    Args:
-    - sp: An authenticated spotipy.Spotify client.
-
-    Returns:
-    A tuple containing three dictionaries:
-    - The first dictionary lists playlists with their track IDs.
-    - The second dictionary contains details for all unique tracks.
-    - The third dictionary contains details for all unique artists.
     """
-    playlists_data = []
+    playlists_details = {}
     tracks_details = {}
     artists_details = {}
+    unique_artist_ids = set()  # To store unique artist IDs
 
     playlists = sp.current_user_playlists(limit=50)
     for playlist in playlists['items']:
-        playlist_id = playlist['id']
-        playlist_name = playlist['name']
-        playlist_images = playlist['images']
+        playlist_id = playlist.get('id')
+        playlist_name = playlist.get('name')
+        playlist_images = playlist.get('images', [])
         playlist_image_url = playlist_images[0]['url'] if playlist_images else None
+        playlist_owner = playlist.get('owner', {}).get('display_name', '')
+        playlist_description = playlist.get('description', '')
+        playlist_followers = playlist.get('followers', 0)
 
         playlist_track_ids = []
-        tracks_response = sp.playlist_tracks(playlist_id, limit=100)
+        tracks_response = sp.playlist_tracks(
+            playlist_id, fields="items.track(id,name,artists,album,duration_ms,external_urls,images),next", limit=100)
         while tracks_response:
             for item in tracks_response['items']:
                 track = item['track']
-                if track is not None:
+                if track:  # Ensure track is not None
                     track_id = track['id']
-                    playlist_track_ids.append(track_id)
 
-                    # Populate track details if not already done
-                    if track_id not in tracks_details:
-                        track_album_images = track['album']['images']
-                        track_image_url = track_album_images[0]['url'] if track_album_images else None
-                        tracks_details[track_id] = {
-                            'name': track['name'],
-                            # Store artist IDs
-                            'artists': [artist['id'] for artist in track['artists']],
-                            'album': track['album']['name'],
-                            'duration_ms': track['duration_ms'],
-                            'spotify_url': track['external_urls']['spotify'],
-                            'image_url': track_image_url
-                        }
+                    if len(track['name'])>0:
+                        # Populate track details if not already done
+                        if track_id not in tracks_details:
+                            tracks_details[track_id] = {
+                                'name': track['name'],
+                                'artists': [artist['id'] for artist in track['artists']],
+                                'album': track['album']['name'],
+                                'duration_ms': track['duration_ms'],
+                                'spotify_url': track['external_urls']['spotify'],
+                                'image_url': track['album']['images'][0]['url'] if track['album']['images'] else None,
+                                'release_date': track['album']['release_date'],
+                                "release_date_precision": track['album']['release_date_precision'],
+                            }
 
-                        # Populate artist details if not already done
-                        for artist in track['artists']:
-                            artist_id = artist['id']
-                            if artist_id not in artists_details:
-                                artists_details[artist_id] = {
-                                    'name': artist['name'],
-                                    'spotify_url': artist['external_urls']['spotify'],
-                                    'genre': artist['genres'],
-                                    'popularity': artist['popularity']
-                                }
+                            # Add artist IDs to the set of unique artist IDs
+                            unique_artist_ids.update(
+                                artist['id'] for artist in track['artists'])
+                        
+                        playlist_track_ids.append(track_id)
 
-            if tracks_response['next']:
-                tracks_response = sp.next(tracks_response)
-            else:
-                tracks_response = None
 
-        playlists_data.append({
+            # Fetch next batch of tracks if available
+            tracks_response = sp.next(
+                tracks_response) if tracks_response['next'] else None
+
+        playlists_details[playlist_id] = {
             'id': playlist_id,
             'name': playlist_name,
             'image_url': playlist_image_url,
-            'track_ids': playlist_track_ids  # Store only track IDs
-        })
+            'track_ids': playlist_track_ids,
+            'description': playlist_description,
+            'followers': playlist_followers,
+            'owner': playlist_owner
+        }
 
-    return playlists_data, tracks_details, artists_details
+    # After collecting unique artist IDs, fetch artist details in bulk
+    # Assuming a `chunker` utility function
+    for artist_id_chunk in chunker(list(unique_artist_ids), 50):
+        artists = sp.artists(artist_id_chunk)['artists']
+        for artist in artists:
+            if artist:  # Ensure artist is not None
+                artists_details[artist['id']] = {
+                    'name': artist['name'],
+                    'spotify_url': artist['external_urls']['spotify'],
+                    'popularity': artist['popularity'],
+                    'genre': artist['genres'],
+                    # Some artists may not have images
+                    'image_url': artist['images'][0]['url'] if artist.get('images') else None
+                }
+
+    return playlists_details, tracks_details, artists_details
+
+
+def chunker(seq, size):
+    """Utility function to divide a list into chunks of a specific size."""
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
 
 def ensure_cache_data_freshness(sp: Spotify):
     """
@@ -141,6 +162,8 @@ def ensure_cache_data_freshness(sp: Spotify):
     A tuple containing three elements: playlist data, track details, and artist details.
     Uses cached data if it is considered valid, otherwise fetches from Spotify.
     """
+    start_time = time.time()
+
     logging.info(
         "Checking cache status for playlists, tracks, and artists data.")
 
@@ -157,15 +180,31 @@ def ensure_cache_data_freshness(sp: Spotify):
         logging.info("Cache is outdated or incomplete. Fetching new data...")
         try:
             # Fetch new data from Spotify
-            playlists_data, tracks_details, artists_details = fetch_user_playlists_with_tracks_from_spotify(
+            playlists_details, tracks_details, artists_details = fetch_user_playlists_with_tracks_from_spotify(
                 sp)
+
+            # Update track details with track wise metrics
+            update_tracks_cache_with_audio_features_in_bulk(sp, tracks_details)
+
+            # Update playlist details with metrics
+            update_playlist_metrics_cache_in_bulk(playlists_details, tracks_details, artists_details)
+
             # Update the cache with the new data
             spotify_cache.update_cache(
-                playlists_data, tracks_details, artists_details)
+                playlists_details, tracks_details, artists_details)
             logging.info("Data successfully fetched and cached.")
+
+            # log time
+            end_time = time.time()
+            duration = end_time - start_time
+
+            logging.info(
+                f"Cache check and update completed in {duration:.4f} seconds.")
+
         except Exception as e:
             logging.error(f"Error while fetching or caching data: {e}")
             return None, None, None
+
 
 def calculate_user_stats():
     """
@@ -176,12 +215,12 @@ def calculate_user_stats():
         logging.error("Spotify cache instance is not available.")
         return None
 
-    playlists_data = spotify_cache.playlist_cache
+    playlists_details = spotify_cache.playlist_cache
     tracks_details = spotify_cache.tracks_cache
     artists_details = spotify_cache.artists_cache
 
     # Check if data is present
-    if not playlists_data or not tracks_details or not artists_details:
+    if not playlists_details or not tracks_details or not artists_details:
         logging.info("Cache data is missing. Statistics cannot be calculated.")
         return {
             'num_playlists': 0,
@@ -189,7 +228,7 @@ def calculate_user_stats():
             'num_unique_artists': 0
         }
 
-    num_playlists = len(playlists_data)
+    num_playlists = len(playlists_details)
     # Using keys directly as they represent unique track IDs
     unique_tracks = set(tracks_details)
     # Using keys directly as they represent unique artist IDs
@@ -201,7 +240,8 @@ def calculate_user_stats():
         'num_unique_artists': len(unique_artists)
     }
 
-##----------------- Track Specific -------------------##
+## ----------------- Track Specific -------------------##
+
 
 def fetch_track_by_id_from_spotify(sp: Spotify, track_id):
     """
@@ -236,6 +276,7 @@ def fetch_track_by_id_from_spotify(sp: Spotify, track_id):
         logging.error(f"Failed to fetch track ID {track_id} from Spotify: {e}")
         return None
 
+
 def get_track_information_from_cache(track_id):
     """
     Retrieves detailed information for a specific track by its Spotify ID from the in-memory cache.
@@ -266,12 +307,13 @@ def get_track_information_from_cache(track_id):
 
             # Providing default values
             'image_url': track_details.get('image_url', 'https://example.com/default_image.png'),
-            'metrics': track_details.get('metric')
+            'audio_features': track_details.get('audio_features', None)
         }
         return track_info
     else:
         print(f"Track ID {track_id} not found in cache.")
         return None
+
 
 def get_all_tracks_data_from_cache():
     """
@@ -294,6 +336,7 @@ def get_all_tracks_data_from_cache():
     except Exception as e:
         logging.error(f"Failed to fetch tracks data from cache: {e}")
         return []
+
 
 def update_track_cache_with_audio_features(sp: Spotify, track_id):
     """
@@ -324,36 +367,35 @@ def update_track_cache_with_audio_features(sp: Spotify, track_id):
             spotify_cache.tracks_cache[track_id] = {
                 "audio_features": audio_features_data}
 
-def update_tracks_cache_with_audio_features_in_bulk(sp: Spotify, track_ids):
+
+def update_tracks_cache_with_audio_features_in_bulk(sp: Spotify, tracks_details_dict: dict):
     """
-    Fetches and updates the global tracks cache with audio features for each track specified in track_ids.
+    Fetches and updates the global tracks cache with audio features for each track specified in track_details.
 
     Args:
     - sp: An authenticated spotipy.Spotify client.
-    - track_ids: List of unique track IDs.
+    - track_details: Dict of unique tracks.
     """
-    spotify_cache = get_spotify_cache_instance()
-    if not spotify_cache:
-        logging.error("Spotify cache instance is not available.")
-        return
 
     # Iterate over track_ids in batches of 100
-    for i in range(0, len(track_ids), 100):
-        batch = track_ids[i:i+100]
+    for batch in chunker(list(tracks_details_dict.keys()), 100):
         audio_features_list = sp.audio_features(batch)
 
         for features in audio_features_list:
             if features:
                 track_id = features['id']
+                track_details = tracks_details_dict.get(
+                    track_id, {})
+
                 # Simplify assignment with a dictionary comprehension
                 audio_features = {k: features[k] for k in (
-                    'acousticness', 'danceability', 'energy', 'instrumentalness',
-                    'liveness', 'loudness', 'speechiness', 'tempo', 'valence')}
+                    'acousticness', 'analysis_url', 'danceability', 'duration_ms', 'energy', 
+                    'instrumentalness', 'key', 'liveness', 'loudness', 'mode', 'speechiness', 
+                    'tempo', 'time_signature', 'valence')}
 
                 # Update the cache with newly fetched audio features
-                spotify_cache.tracks_cache[track_id] = spotify_cache.tracks_cache.get(
-                    track_id, {})
-                spotify_cache.tracks_cache[track_id]["audio_features"] = audio_features
+                track_details["audio_features"] = audio_features
+
 
 def get_tracks_audio_features_in_bulk(sp, track_ids):
     """
@@ -397,7 +439,52 @@ def get_tracks_audio_features_in_bulk(sp, track_ids):
 
     return tracks_audio_features
 
-##----------------- Playlist Specific -------------------##
+
+## ----------------- Artist Specific ---------------------##
+def get_artist_information_from_cache(artist_id, field=None):
+    """
+    Retrieves detailed information for a specific artist by its Spotify ID from the in-memory cache.
+    Optionally returns only a specific field of the artist's information.
+
+    Args:
+    - artist_id: The Spotify ID of the artist.
+    - field: Optional; the specific field of the artist's information to return.
+
+    Returns:
+    If field is None, a dictionary containing detailed information about the artist,
+    or None if the artist is not found.
+    If field is not None, the value of the specified field, or None if the artist or field is not found.
+    """
+    spotify_cache = get_spotify_cache_instance()
+
+    if spotify_cache is None:
+        print("Spotify cache instance is not available.")
+        return None
+
+    if artist_id in spotify_cache.artists_cache:
+        artist_details = spotify_cache.artists_cache[artist_id]
+
+        if field:
+            # Return only the specified field if it exists in the artist's details
+            return artist_details.get(field, None)
+        else:
+            # Return the entire artist details if no specific field is requested
+            artist_info = {
+                'id': artist_id,
+                'name': artist_details['name'],
+                'spotify_url': artist_details.get('spotify_url', '#'),
+                'popularity': artist_details.get('popularity', 0),
+                'genre': artist_details.get('genre', 'Unknown Genre'),
+                'image_url': artist_details.get('image_url', 'https://example.com/default_artist_image.png')
+            }
+            return artist_info
+    else:
+        print(f"Artist ID {artist_id} not found in cache.")
+        return None
+
+
+## ----------------- Playlist Specific -------------------##
+
 
 def get_playlist_data_by_id_from_cache(playlist_id):
     """
@@ -430,6 +517,7 @@ def get_playlist_data_by_id_from_cache(playlist_id):
             f"Failed to fetch playlist {playlist_id} data from cache: {e}")
         return None
 
+
 def get_all_playlist_data_from_cache():
     """
     Retrieves all playlist data from the cache.
@@ -440,8 +528,13 @@ def get_all_playlist_data_from_cache():
     """
     try:
         spotify_cache = get_spotify_cache_instance()
+
         if not spotify_cache:
             logging.error("Spotify cache instance is not available.")
+            return []
+
+        if not spotify_cache.is_cache_valid():
+            logging.error("Spotify cache not valid")
             return []
 
         # Assuming playlist_cache is a dict of playlists keyed by playlist IDs
@@ -452,6 +545,7 @@ def get_all_playlist_data_from_cache():
     except Exception as e:
         logging.error(f"Failed to fetch playlist data from cache: {e}")
         return []
+
 
 def get_playlist_wise_tracks_information_from_cache(playlist_id):
     """
@@ -484,11 +578,11 @@ def get_playlist_wise_tracks_information_from_cache(playlist_id):
                 'id': track_id,
                 'name': track_details['name'],
                 'album': track_details.get('album', 'Unknown Album'),
-                'artists': [artist['name'] for artist in track_details.get('artists', [])],
+                'artists': [get_artist_information_from_cache(artist, "name") for artist in track_details.get('artists', [])],
                 'duration_ms': track_details.get('duration_ms', 0),
                 'spotify_url': track_details.get('spotify_url', '#'),
                 'image_url': track_details.get('image_url', 'https://example.com/default_image.png'),
-                'metrics': track_details.get('metrics')
+                'audo_features': track_details.get('audio_features')
             }
             all_tracks_info.append(track_info)
         else:
@@ -496,7 +590,8 @@ def get_playlist_wise_tracks_information_from_cache(playlist_id):
 
     return all_tracks_info
 
-def update_playlist_metrics(playlist_id):
+
+def update_playlist_metrics_cache_in_bulk(playlists_details, tracks_details, artists_details):
     """
     Calculates metrics for a specific playlist by its ID, using cached track and artist data.
 
@@ -506,60 +601,63 @@ def update_playlist_metrics(playlist_id):
     Returns:
     A dictionary containing metrics for the playlist.
     """
-    spotify_cache = get_spotify_cache_instance()
 
-    # Initialize variables to store data
-    genres = {}
-    artist_counts = {}
-    release_years = []
-    popularity_scores = []
-    audio_features_list = []
+    for playlist_id in playlists_details.keys():
+        # Initialize variables to store data
+        genres = {}
+        artist_counts = {}
+        release_years = []
+        popularity_scores = []
+        audio_features_list = []
+        
+        playlist_tracks = playlists_details[playlist_id]['track_ids']
 
-    # Check if playlist_id is in the playlist_cache
-    if playlist_id not in spotify_cache.playlist_cache:
-        print(f"Playlist ID {playlist_id} not found in cache.")
-        return {}
+        for track_id in playlist_tracks:
+            # Fetch track details from tracks_cache
+            if track_id in tracks_details:
+                track = tracks_details[track_id]
 
-    playlist_tracks = spotify_cache.playlist_cache[playlist_id]['track_ids']
+                # Process track data
+                try:
+                    release_year = int(track['release_date'][:4])
+                    if(release_year>0):
+                        release_years.append(release_year)
+                except KeyError:
+                    pass  # Handle tracks without release dates
 
-    for track_id in playlist_tracks:
-        # Fetch track details from tracks_cache
-        if track_id in spotify_cache.tracks_cache:
-            track = spotify_cache.tracks_cache[track_id]
+                popularity_scores.append(track.get('popularity', 0))
 
-            # Process track data
-            try:
-                release_year = int(track['album']['release_date'][:4])
-                release_years.append(release_year)
-            except KeyError:
-                pass  # Handle tracks without release dates
+                # Process artist data
+                for artist_id in track['artists']:
+                    # Fetch artist details from artists_cache
+                    if artist_id in artists_details:
+                        if artist_id != '1wRPtKGflJrBx9BmLsSwlU': ## Remove pritam, yee har jagah he
+                            artist = artists_details[artist_id]
+                            artist_name = artist['name']
+                            artist_counts[artist_name] = artist_counts.get(
+                                artist_name, 0) + 1
 
-            popularity_scores.append(track.get('popularity', 0))
+                            for genre in artist.get('genre', []):
+                                genres[genre] = genres.get(genre, 0) + 1
 
-            # Process artist data
-            for artist_id in track['artists']:
-                # Fetch artist details from artists_cache
-                if artist_id in spotify_cache.artists_cache:
-                    artist = spotify_cache.artists_cache[artist_id]
-                    artist_name = artist['name']
-                    artist_counts[artist_name] = artist_counts.get(
-                        artist_name, 0) + 1
+                # Collect audio features if available
+                if 'audio_features' in track:
+                    audio_features_list.append(track['audio_features'])
 
-                    for genre in artist.get('genres', []):
-                        genres[genre] = genres.get(genre, 0) + 1
+        # Calculate metrics
+        metrics = calculate_playlist_metrics(playlist_tracks, release_years, popularity_scores, genres, artist_counts, audio_features_list)
 
-            # Collect audio features if available
-            if 'audio_features' in track:
-                audio_features_list.append(track['audio_features'])
+        # Update playlist cache
+        playlists_details[playlist_id]['metrics'] = metrics
 
-    # Calculate metrics
-    metrics = {
+
+def calculate_playlist_metrics(playlist_tracks, release_years, popularity_scores, genres, artist_counts, audio_features_list):
+    metrics =  {
         'Track Count': len(playlist_tracks),
-        'Total Duration': sum([feature['duration_ms'] for feature in audio_features_list]) / 1000,
+        'Total Duration': round((sum([feature['duration_ms'] for feature in audio_features_list]) / 1000) / 3600,2),
         'Average Track Duration': np.mean([feature['duration_ms'] for feature in audio_features_list]) / 1000 if audio_features_list else 0,
-        'Genre Distribution': genres,
+        'Genre Distribution': list(genres),
         'Artist Diversity': len(set(artist_counts.keys())),
-        'Most Featured Artist(s)': max(artist_counts, key=artist_counts.get) if artist_counts else 'N/A',
         'Release Year Range': f"{min(release_years)} - {max(release_years)}" if release_years else 'N/A',
         'Average Release Year': np.mean(release_years) if release_years else 'N/A',
         'Average Popularity Score': np.mean(popularity_scores) if popularity_scores else 0,
@@ -574,21 +672,18 @@ def update_playlist_metrics(playlist_id):
         'Average Tempo': np.mean([feature['tempo'] for feature in audio_features_list]) if audio_features_list else 0
     }
 
-    # Update playlist cache
-    spotify_cache.playlist_cache[playlist_id]['metrics'] = metrics
+    if artist_counts:
+        # Sort the artists by their counts in descending order and get the top 5
+        top_5_artists = sorted(artist_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        # Convert each tuple in the list to a more readable format if needed
+        top_5_artists_with_count = [f"{artist[0]} ({artist[1]})" for artist in top_5_artists]
+    else:
+        top_5_artists_with_count = 'N/A'
 
-def update_playlist_metrics_cache_in_bulk(sp):
-    """
-    Calculates and updates metrics for each playlist in the global playlist_cache.
+    # Now, top_5_artists_with_count contains the top 5 artists and their counts or 'N/A' if there are none
+    metrics['Most Featured Artist(s)'] = top_5_artists_with_count
 
-    Args:
-    - sp: An authenticated spotipy.Spotify client.
-    """
-    spotify_cache = get_spotify_cache_instance()
-
-    for playlist_id, playlist_data in spotify_cache.playlist_cache.items():
-        # Calculate metrics for each playlist
-        update_playlist_metrics(playlist_id, sp)
+    return metrics
 
 def get_playlist_metric_by_id(playlist_id):
     """

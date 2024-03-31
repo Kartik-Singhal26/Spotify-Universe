@@ -26,4 +26,8 @@ auth_manager = SpotifyOAuth(client_id=CLIENT_ID,
 
 print("auth manager set up succesful")
 
+## Initialize global cache
+from app.utils import initialize_global_cache
 from app import routes
+
+initialize_global_cache()
