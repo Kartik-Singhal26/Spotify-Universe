@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Playlists - Spotify Flask App{% endblock %}
+
+{% block content %}
+<div class="row">
+  <!-- User Info Section -->
+  <div class="col-md-12">
+      {% include 'partials/_user_info.html' %}
+  </div>
+</div>
+<div class="row flex-nowrap">
+  <!-- Sidebar Navigation -->
+  <div class="col-md-1">
+      {% include 'partials/_navbar.html' %}
+  </div>
+
+  <!-- Dynamic Main Content Area -->
+  <div class="col-md-11" id="main-content">
+      <!-- Placeholder for content that will be loaded dynamically -->
+      {% include 'partials/_main_container.html' %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+{% endblock %}

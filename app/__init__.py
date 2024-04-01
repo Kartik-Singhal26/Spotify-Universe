@@ -4,7 +4,7 @@ import json
 from spotipy.oauth2 import SpotifyOAuth
 from flask_cors import CORS
 
-app = Flask(__name__, template_folder = r'E:/Spotify/templates')
+app = Flask(__name__, template_folder = r'E:/Spotify/templates', static_folder=r'E:/Spotify/static')
 CORS(app)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
 

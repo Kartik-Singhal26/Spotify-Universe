@@ -46,13 +46,22 @@ def home():
         if response_code_user_details == 200 and response_code_user_stats == 200:
             user_details = user_details_response.get_json()  # Extract JSON data from the response
             user_stats = user_stats_response.get_json()  # Extract JSON data from the response
-            return render_template('home.html', user_info=user_details, user_stats=user_stats)
+            return render_template('index.html', user_info=user_details, user_stats=user_stats)
         else:
             logging.error("Failed to fetch user details or stats.")
             return redirect(url_for('error'))  # Redirect to an error handling route
     else:
         logging.info("No token found, redirecting to login page.")
         return redirect(url_for('signin'))
+
+@app.route('/content/<page>')
+def content(page):
+    if page == 'playlists':
+        # Directly return the rendered HTML template for playlists
+        return render_template('partials/_playlists.html')
+    # Handle other pages or return a 404/error if the page does not exist
+    return render_template('error.html')
+
 
 @app.route('/login')
 def login():
