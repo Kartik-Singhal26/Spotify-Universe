@@ -1,20 +1,20 @@
 {% block user_info %}
 <div class="row">
     <div class="col-md-12 mb-2">
-        <div class="bg-dark text-light py-3 px-4 rounded" style="background-color: #1db954; position: relative;">
-            <div class="user-info-header d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <h1 class="h4 mb-0" style="color: #ffffff;">Welcome, {{ user_info.get('display_name', 'User') }}!</h1>
-                    <span class="lead mb-0" style="color: #0e0e0e; font-size: 1rem;">to your music universe</span>
-                </div>
+        <div class="user-info text-light py-3 px-4 rounded">
+            <div class="user-info-header d-flex justify-content-between align-items-start">
                 <div>
-                    <a href="/logout" class="btn btn-dark" style="background-color: #1db954; border-color: #333;">Logout</a>
+                    <h1 class="h4 mb-0 user-welcome">Welcome, {{ user_info.get('display_name', 'User') }}!</h1>
+                    <span class="lead mb-0 user-universe align-bottom">to your music universe</span>
+                </div>
+                <div class="ml-auto">
+                    <a href="/logout" class="btn btn-outline-light">Logout</a>
                 </div>
             </div>
-            <div class="user-stats text-light d-flex justify-content-start">
-                <p><i class="fas fa-play-circle"></i> <strong style="color: #1db954;">{{ user_stats['num_playlists'] }}</strong> public playlists</p>
-                <p><i class="fas fa-music"></i> <strong style="color: #1db954;">{{ user_stats['num_unique_tracks'] }}</strong> unique tracks</p>
-                <p><i class="fas fa-user-friends"></i> <strong style="color: #1db954;">{{ user_stats['num_unique_artists'] }}</strong> artists</p>
+            <div class="user-stats d-flex justify-content-start">
+                <p><i class="fas fa-play-circle"></i> <strong>{{ user_stats['num_playlists'] }}</strong> public playlists</p>
+                <p><i class="fas fa-music"></i> <strong>{{ user_stats['num_unique_tracks'] }}</strong> unique tracks</p>
+                <p><i class="fas fa-user-friends"></i> <strong>{{ user_stats['num_unique_artists'] }}</strong> artists</p>
             </div>
         </div>
     </div>

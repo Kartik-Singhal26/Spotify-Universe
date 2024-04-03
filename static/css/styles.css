@@ -1,155 +1,150 @@
 /* Root Variables */
 :root {
-  --background-color: #282828;
-  --text-color: #e1e1e1;
-  --link-color: #1db954;
-  --border-color: #343434;
-  --hover-background-color: #181818;
+  --background-color: #121212; /* Spotify's main background color */
+  --text-color: #fff; /* Main text color - white for contrast */
+  --subdued-text-color: #b3b3b3; /* Less prominent text */
+  --link-color: #1db954; /* Spotify's brand green color */
+  --border-color: #282828; /* Border color for elements */
+  --hover-background-color: #282828; /* Background color for hover states */
+  --font-family: "Montserrat", sans-serif; /* Spotify uses a sans-serif font, Montserrat is a good alternative */
+}
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Base Styles */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-family);
+  color: var(--text-color);
+}
+
 body {
   background-color: var(--background-color);
-  color: var(--text-color);
-  font-family: "Arial", sans-serif;
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
-h1, h2 {
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--text-color);
 }
 
 a {
   color: var(--link-color);
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
-a:hover {
+a:hover,
+a:focus {
   color: var(--text-color);
+  text-decoration: underline;
 }
 
-p, small, .track-time {
-  color: #b3b3b3;
+p,
+small,
+.track-time {
+  color: var(--subdued-text-color);
 }
 
-hr.spotify-green {
-  border: 0;
-  height: 1px;
-  background-color: var(--link-color);
-  margin: 20px 0;
+/* Sidebar Styling */
+.sidebar {
+  background-color: var(--background-color);
+  color: var(--subdued-text-color);
 }
 
-/* Layout & Containers */
-.main-container {
-  max-width: 95vw;
-  max-height: 95vh;
-  width: 100%;
-  margin: auto;
-  padding: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+#sidebar-menu .nav-link {
+  color: inherit;
+  transition: all 0.3s ease;
 }
 
-.playlist-tab-container {
-  width: 100%;
-  height: 100%;
-  margin: auto;
-  padding: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.scrollable-container {
-  flex-grow: 1;
-  height: 100%;
-  overflow-y: scroll;
+#sidebar-menu .nav-link:hover,
+#sidebar-menu .nav-link:focus {
   background-color: var(--hover-background-color);
-  padding: 5px;
-  margin-bottom: auto;
-  border-radius: 5px;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  box-sizing: border-box;
-}
-
-/* Custom Scrollbar */
-.scrollable-container::-webkit-scrollbar {
-  width: 12px;
-}
-
-.scrollable-container::-webkit-scrollbar-track {
-  background: var(--background-color);
-  border-radius: 10px;
-}
-
-.scrollable-container::-webkit-scrollbar-thumb {
-  background-color: var(--link-color);
-  border-radius: 10px;
-  border: 3px solid var(--background-color);
-}
-
-/* Cards & Lists */
-.card, .list-group-item {
-  background-color: #202020;
   color: var(--text-color);
+}
+
+#sidebar-menu .nav-link.active {
+  background-color: var(--active-color);
+  color: var(--text-color);
+}
+
+/* Main Container & Layout */
+.main-container {
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+.selected-playlist-container {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row; /* Change flex-direction to row */
+}
+/* Cards & List Groups */
+.card,
+.list-group-item {
+  background-color: var(--hover-background-color);
   border: 1px solid var(--border-color);
   margin-bottom: 10px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 5px;
+  transition: background-color 0.3s ease;
 }
 
-.list-group-item:hover, .list-group-item:focus {
-  background-color: var(--hover-background-color);
-  border: 0.5px solid var(--link-color);
-  box-shadow: 0 0 10px var(--link-color);
-  color: var(--text-color);
-
+.card:hover,
+.list-group-item:hover,
+.list-group-item:focus {
+  background-color: var(--active-color);
+  border-color: var(--link-color);
 }
 
-/* Adjusting Playlist Items */
+/* Playlist Items & Carousel */
+.carousel-item {
+  transition: opacity 0.3s ease;
+}
+
 .playlist-item {
-  max-width: 120%;
-  max-height: 120%;
-  position: relative;
-  align-self: center;
-  justify-self: center;
-  left: 80%;
-  bottom: -10%;
-  transform: translateX(-60%);
-  transition: border-color 0.3s ease, transform 0.3s ease;
-  cursor: pointer;
-  border-radius: 2px;
+  position: relative; /* Set position to absolute */
+  top: 50%; /* Move the item down by 50% of its parent's height */
+  left: 50%; /* Move the item right by 50% of its parent's width */
+  transform: translate(-50%, -50%); /* Adjust for centering */
+  max-width: 90%;
+  max-height: 90%;
+  transition: border-color 0.3s ease, transform 0.3s ease; /* Smooth transition for border color and transform changes */
+  cursor: pointer; /* Change cursor to pointer on hover */
+  border-radius: 2px; /* Add border radius */
 }
-
 .playlist-item img {
-  width: 100%;
-  height: 100%;
-  border-radius: 5px;
-  transition: transform 0.3s ease, border-radius 0.3s ease;
-  display: block;
-  object-fit: cover;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.playlist-item:hover img {
-  transform: scale(1.1);
-  border: 1px solid #1db954 !important;
-  box-shadow: 0 0 15px #1db954;
+.playlist-item img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Add Green Border to Selected Playlist */
 .playlist-item.selected {
   border: 2px solid #1db954;
+  background-color: #1db954; /* Change background color to green */
 }
-
 /* Carousel Arrows */
-.carousel-control-prev, .carousel-control-next {
+.carousel-control-prev,
+.carousel-control-next {
   top: 50%;
   width: 20px;
   height: 40px;
@@ -157,37 +152,93 @@ hr.spotify-green {
   margin-top: -20px;
 }
 
-.carousel-control-prev-icon, .carousel-control-next-icon {
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
   background-color: transparent;
   color: white;
   width: 50px;
   height: 50px;
 }
 
-#sidebar {
-  min-height: 100vh; /* Full height */
-  margin-top: -1.5rem; /* Align with the top */
-  padding-top: 1.5rem;
+/* Custom Scrollbar */
+.scrollable-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) var(--background-color);
 }
 
-.nav-link {
-  color: var(--link-color);
+.scrollable-container::-webkit-scrollbar {
+  width: 5px;
 }
 
-.nav-link:hover {
-  color: var(--text-color);
-  background-color: var(--hover-background-color);
+.scrollable-container::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+}
+
+/* User Info */
+.user-info {
+  background: linear-gradient(to right, #252b27 0%, #4c6856 100%);
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between; /* Space between elements */
+  align-items: center; /* Vertically align elements */
+  padding: 1rem;
+  color: #fff; /* White text */
+}
+
+.user-info-header {
+  display: flex;
+  align-items: center; /* Align the text and button */
+}
+
+.user-welcome {
+  font-size: 3rem; /* Large font size for welcome text */
+  margin-right: 0.5rem; /* Space between welcome text and subtitle */
+}
+
+.user-universe {
+  font-size: 1rem; /* Large font size for welcome text */
+  margin-left: 0.5rem; /* Space before subtitle */
+}
+
+.user-stats {
+  display: flex;
+  align-items: center; /* Vertically align stats */
+}
+
+.user-stats p {
+  margin: 0 1rem; /* Horizontal space between stats */
+}
+
+.btn-outline-light {
+  padding: 0.5rem 1rem; /* Padding inside the button */
+  border: 2px solid #fff; /* White border for the button */
+  border-radius: 2px; /* Rounded corners for the button */
+}
+
+.btn-outline-light:hover {
+  background-color: #fff;
+  color: #1db954;
+  text-decoration: none;
 }
 
 /* Responsive Design Adjustments */
 @media (max-width: 768px) {
-  .row.fixed-container {
-    flex-wrap: wrap;
-    height: auto;
+  .main-container,
+  .placeholder-container,
+  .playlist-tab-container {
+    width: auto;
+    margin: 0.5rem;
   }
 
-  #playlistDetails, #tracksContainer {
-    flex: 0 0 100%;
-    height: auto;
+  .user-info {
+    flex-direction: column; /* Stack the elements on smaller screens */
+  }
+  .user-universe,
+  .user-stats p {
+    margin: 0.5rem 0; /* Add space around elements on smaller screens */
+  }
+  .btn-logout {
+    align-self: center; /* Center the logout button on smaller screens */
+    margin-top: 1rem; /* Add space above the logout button on smaller screens */
   }
 }

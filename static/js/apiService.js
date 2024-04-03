@@ -32,6 +32,7 @@ const apiService = (function() {
     return {
         getAllPlaylists,
         getPlaylistDetails,
-        getAllTracksForPlaylist
+        getAllTracksForPlaylist,
+        baseUrl
     };
 })();
