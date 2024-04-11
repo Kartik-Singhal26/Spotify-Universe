@@ -705,3 +705,4 @@ def get_playlist_metric_by_id(playlist_id):
         return None
 
     return playlist_metric
+

@@ -1,6 +1,7 @@
 $(document).ready(() => {
     const state = {
-        userContentFetched: false
+        userContentFetched: false,
+        selectedPlaylistId: null, // Make sure this is properly updated elsewhere in your script
     };
 
     function loadContent(page) {
@@ -13,7 +14,6 @@ $(document).ready(() => {
             },
             error: () => {
                 $('#main-content #content-placeholder').html("<p>Error loading content.</p>");
-                console.error("Error loading content.");
             }
         });
     }
@@ -24,7 +24,7 @@ $(document).ready(() => {
                 fetchAllPlaylists();
                 break;
             case 'dashboard':
-                console.log("Under development");
+                console.log("Dashboard under development");
                 break;
             default:
                 console.error("Invalid page:", page);
@@ -33,28 +33,24 @@ $(document).ready(() => {
 
     function fetchAllPlaylists() {
         apiService.getAllPlaylists()
-            .done(function (playlists) {
+            .done((playlists) => {
                 templateRenderer.renderPlaylists(playlists);
                 setupPlaylistItemListeners();
             })
-            .fail(function () {
+            .fail(() => {
                 console.error("Error fetching playlists.");
             });
     }
 
-    initCarouselControls();
-    initNavControls();
-
     function initNavControls() {
         $('#sidebar-menu .nav-link').on('click', function (e) {
-            e.preventDefault(); // Prevent default link behavior
+            e.preventDefault();
 
-            const page = $(this).data('page'); // Get the data-page value
-            loadContent(page); // Load the content for the clicked section
+            const page = $(this).data('page');
+            loadContent(page);
 
-            // Update active state on the sidebar
-            $('#sidebar-menu .nav-link').removeClass('active'); // Remove active class from all links
-            $(this).addClass('active'); // Add active class to the clicked link
+            $('#sidebar-menu .nav-link').removeClass('active');
+            $(this).addClass('active');
         });
     }
 
@@ -68,9 +64,9 @@ $(document).ready(() => {
     function setupPlaylistItemListeners() {
         $("#playlistsContainer").on("click", ".playlist-item", function () {
             const { playlistId, playlistName } = $(this).data();
-            console.log("click");
             $(".playlist-item").removeClass("selected-playlist");
             $(this).addClass("selected-playlist");
+            state.selectedPlaylistId = playlistId; // Update the state with the selected playlist ID
             displayPlaylistDetailsAndTracks(playlistId, playlistName);
         });
     }
@@ -82,6 +78,60 @@ $(document).ready(() => {
             .fail(() => $("#playlistDetails").html("<p>Error loading playlist details.</p>"));
         apiService.getAllTracksForPlaylist(playlistId)
             .done((tracks) => templateRenderer.renderTracks(tracks))
-            .fail(() => $("#tracksContainer").html("<div class='list-group'><p>Error loading tracks.</p></div>"));
+            .fail(() => $("#tracks-container").html("<div class='list-group'><p>Error loading tracks.</p></div>"));
+        setupActionBar();
+
+        // Track selection mode toggling and track selection
+        $('#tracks-container').on('click', '.list-group-item', function (e) {
+            if ($('#tracks-container').hasClass('selection-mode')) {
+                e.preventDefault(); // Prevent default action
+                $(this).toggleClass('selected');
+            }
+        });
+
+        // This handles clicks on any anchors within .list-group-item to prevent navigation
+        $('#tracks-container').on('click', '.list-group-item a', function (e) {
+            if ($('#tracks-container').hasClass('selection-mode')) {
+                e.preventDefault(); // Prevent the link from being followed
+                $(this).closest('.list-group-item').toggleClass('selected');
+            }
+        });
+
+        $('.track-select').on('click', function (e) {
+            e.stopPropagation();
+        });
     }
+
+    function setupActionBar() {
+        $('#selectTracksBtn').click(function () {
+            $('#tracks-container').toggleClass('selection-mode');
+            $('#deleteTracksBtn').toggle(); // Optionally, toggle visibility based on selection-mode
+        });
+
+        setupDeleteTrackListener();
+    }
+
+    function setupDeleteTrackListener() {
+        $('#deleteTracksBtn').click(function () {
+            let selectedTrackIds = $('#tracks-container .list-group-item.selected').map(function() {
+                // Retrieve the track ID stored in data-track-id
+                return $(this).data('track-id');
+            }).get();
+        
+
+            if (state.selectedPlaylistId && selectedTrackIds.length > 0) {
+                apiService.deleteTracksFromPlaylists(selectedTrackIds, state.selectedPlaylistId);
+            } else {
+                console.error('No playlistId defined or no tracks selected. Cannot delete tracks without a valid playlist ID and selected tracks.');
+            }
+        });
+    }
+
+    // Assuming deleteTracksFromPlaylists is defined elsewhere and correctly communicates with the server
+
+    // Initialize UI controls
+    initCarouselControls();
+    initNavControls();
+
+
 });

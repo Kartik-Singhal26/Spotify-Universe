@@ -45,12 +45,13 @@ const templateRenderer = {
         $("#playlistDetails").html(playlistDetailsHtml);
     },
 
-    renderTracks: function (tracks) {
+    renderTracks: function(tracks) {
         let tracksHtml = "<div class='list-group'>";
         tracks.forEach(track => {
             const trackDuration = new Date(track.duration_ms).toISOString().substr(14, 5);
+            // Add the data-track-id attribute to each track item
             tracksHtml += `
-                <a href="${track.spotify_url}" target="_blank" class="list-group-item list-group-item-action">
+                <a href="${track.spotify_url}" target="_blank" class="list-group-item list-group-item-action" data-track-id="${track.id}">
                     <div class="d-flex justify-content-between align-items-center w-100">
                         <div class="track-info d-flex align-items-center">
                             <img src="${track.image_url}" alt="${track.name}" class="img-fluid mr-3" style="width: 50px; height: 50px; object-fit: cover;">
@@ -65,8 +66,8 @@ const templateRenderer = {
             `;
         });
         tracksHtml += "</div>";
-
-        $("#tracksContainer").html(tracksHtml);
+    
+        $("#tracks-container").html(tracksHtml);
     },
 
     displayRandomMusicNoteOrPlaylistName: function (playlistName) {
@@ -79,6 +80,6 @@ const templateRenderer = {
             contentHtml = `<div class="text-center mt-5"><span style="font-size: 100px;">${randomNote}</span><p class="mt-3">Select a playlist to see tracks</p></div>`;
         }
 
-        $("#tracksContainer").html(contentHtml);
+        $("#tracks-container").html(contentHtml);
     }
 };

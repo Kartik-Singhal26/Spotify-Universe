@@ -294,6 +294,32 @@ def get_track_by_id(track_id):
         logging.error(f"Failed to fetch track for ID {track_id}: {e}")
         return jsonify({'error': str(e)}), 500
 
+
+def delete_tracks_by_id(track_ids):
+    # Placeholder for your deletion logic
+    # This could involve removing the tracks from a database
+    print(f"Deleting tracks: {track_ids}")
+    # Here you would implement the actual deletion
+    # For now, we'll just pretend it succeeded
+    return True
+
+@app.route('/playlist/delete-tracks', methods=['POST'])
+def delete_tracks():
+    data = request.json
+    track_ids = data.get('trackIds')
+    playlist_id = data.get('playlistID')
+    
+    if not track_ids:
+        return jsonify({'error': 'No track IDs provided'}), 400
+    
+    # Call the function to delete tracks
+    success = delete_tracks_by_id(track_ids)
+    
+    if success:
+        return jsonify({'message': f'{len(track_ids)} tracks deleted successfully.'})
+    else:
+        return jsonify({'error': 'An error occurred while deleting tracks'}), 500
+
 @app.route('/refresh_token')
 def refresh_token():
     try:

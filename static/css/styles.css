@@ -1,13 +1,15 @@
 /* Root Variables */
 :root {
-  --background-color: #121212; /* Spotify's main background color */
-  --text-color: #fff; /* Main text color - white for contrast */
-  --subdued-text-color: #b3b3b3; /* Less prominent text */
-  --link-color: #1db954; /* Spotify's brand green color */
-  --border-color: #282828; /* Border color for elements */
-  --hover-background-color: #282828; /* Background color for hover states */
-  --font-family: "Montserrat", sans-serif; /* Spotify uses a sans-serif font, Montserrat is a good alternative */
+  --background-color: #121212;
+  --text-color: #fff;
+  --subdued-text-color: #b3b3b3;
+  --link-color: #1db954;
+  --selected-color: #417553;
+  --border-color: #282828;
+  --hover-background-color: #282828;
+  --font-family: "Montserrat", sans-serif;
 }
+
 /* Global Styles */
 * {
   margin: 0;
@@ -26,7 +28,6 @@ textarea {
 
 body {
   background-color: var(--background-color);
-  overflow-y: auto;
 }
 
 /* Typography */
@@ -81,26 +82,65 @@ small,
 
 /* Main Container & Layout */
 .main-container {
-  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
   height: 100vh;
   margin: 0;
   padding: 1rem;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.placeholder-container {
+  width: 90%;
+  height: 700px;
+  flex: 1;
+  padding: auto;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 .selected-playlist-container {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
+  width: 90%;
+  height: 700px;
+  flex: 1;
+  padding: auto;
+  margin: auto;
   display: flex;
-  flex-direction: row; /* Change flex-direction to row */
+  flex-direction: row;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
+
+.tracks-container {
+  height: 450px; /* Ensures the container takes up 90% of the viewport height */
+  width: 90%; /* Adjusts the width to 90% of the viewport width, consider adjusting if necessary */
+  margin-bottom: 5px; /* Adjusted from 'bottom: 5;' which was incorrect */
+  overflow-x: hidden;
+  overflow-y: scroll; /* Allows vertical scrolling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-color) var(--scroll-color);
+}
+
+.tracks-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tracks-container::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+}
+
 /* Cards & List Groups */
 .card,
 .list-group-item {
   background-color: var(--hover-background-color);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
+  padding: 6px;
   margin-bottom: 10px;
   transition: background-color 0.3s ease;
 }
@@ -108,26 +148,30 @@ small,
 .card:hover,
 .list-group-item:hover,
 .list-group-item:focus {
-  background-color: var(--active-color);
-  border-color: var(--link-color);
+  background-color: var(--hover-background-color);
+  /* border-color: var(--link-color); */
 }
-
+.list-group-item.selected {
+  background-color: var(--selected-color); /* Green background */
+  color: var(--text-color); /* Ensure text color is readable on the green background */
+}
 /* Playlist Items & Carousel */
 .carousel-item {
   transition: opacity 0.3s ease;
 }
 
 .playlist-item {
-  position: relative; /* Set position to absolute */
-  top: 50%; /* Move the item down by 50% of its parent's height */
-  left: 50%; /* Move the item right by 50% of its parent's width */
-  transform: translate(-50%, -50%); /* Adjust for centering */
+  position: relative;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   max-width: 90%;
   max-height: 90%;
-  transition: border-color 0.3s ease, transform 0.3s ease; /* Smooth transition for border color and transform changes */
-  cursor: pointer; /* Change cursor to pointer on hover */
-  border-radius: 2px; /* Add border radius */
+  transition: border-color 0.3s ease, transform 0.3s ease;
+  cursor: pointer;
+  border-radius: 2px;
 }
+
 .playlist-item img {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -140,8 +184,9 @@ small,
 /* Add Green Border to Selected Playlist */
 .playlist-item.selected {
   border: 2px solid #1db954;
-  background-color: #1db954; /* Change background color to green */
+  background-color: #1db954;
 }
+
 /* Carousel Arrows */
 .carousel-control-prev,
 .carousel-control-next {
@@ -179,46 +224,131 @@ small,
   background: linear-gradient(to right, #252b27 0%, #4c6856 100%);
   border-radius: 4px;
   display: flex;
-  justify-content: space-between; /* Space between elements */
-  align-items: center; /* Vertically align elements */
+  justify-content: space-between;
+  align-items: center;
   padding: 1rem;
-  color: #fff; /* White text */
+  color: #fff;
 }
 
 .user-info-header {
   display: flex;
-  align-items: center; /* Align the text and button */
+  align-items: center;
 }
 
 .user-welcome {
-  font-size: 3rem; /* Large font size for welcome text */
-  margin-right: 0.5rem; /* Space between welcome text and subtitle */
+  font-size: 3rem;
+  margin-right: 0.5rem;
 }
 
 .user-universe {
-  font-size: 1rem; /* Large font size for welcome text */
-  margin-left: 0.5rem; /* Space before subtitle */
+  font-size: 1rem;
+  margin-left: 0.5rem;
 }
 
 .user-stats {
   display: flex;
-  align-items: center; /* Vertically align stats */
+  align-items: center;
 }
 
 .user-stats p {
-  margin: 0 1rem; /* Horizontal space between stats */
+  margin: 0 1rem;
 }
 
 .btn-outline-light {
-  padding: 0.5rem 1rem; /* Padding inside the button */
-  border: 2px solid #fff; /* White border for the button */
-  border-radius: 2px; /* Rounded corners for the button */
+  padding: 0.5rem 1rem;
+  border: 2px solid #fff;
+  border-radius: 2px;
 }
 
 .btn-outline-light:hover {
   background-color: #fff;
   color: #1db954;
   text-decoration: none;
+}
+
+/* Action Bar Styling */
+.action-bar {
+  height: 30px;
+  display: flex;
+  border-radius: 4px;
+  align-items: center;
+  padding-left: 15px;
+  background-color: #121212; /* Light gray background */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+}
+
+.action-bar i {
+  color: #1db954; /* Darker text/icon color for contrast */
+  margin-right: 10px; /* Spacing between icons */
+  cursor: pointer; /* Change cursor on hover to indicate clickable */
+}
+
+.action-bar i:last-child {
+  margin-right: 0; /* Remove margin for the last icon */
+}
+
+.action-bar i:hover {
+  color: #007bff; /* Highlight color on hover (Bootstrap primary color for reference) */
+}
+
+#deleteTracksBtn {
+  cursor: pointer;
+  color: white; /* White text color */
+  background-color: #dc3545; /* Red background color */
+  padding: 5px 8px; /* Padding around the icon */
+  border-radius: 5px; /* Rounded corners for a modern look */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+  display: inline-block; /* Treat the icon like a block element to allow padding */
+  transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+#deleteTracksBtn:hover {
+  background-color: #c82333; /* Darker red on hover */
+}
+
+/* General styling for the list-group */
+.list-group-item {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Style adjustments when in selection mode */
+.selection-mode .list-group-item:hover {
+  background-color: var(--selected-color);; /* Lighter background on hover */
+}
+
+/* Checkbox visible state */
+.selection-mode .track-select {
+  display: block !important; /* Force display when in selection mode */
+}
+
+/* Styling for the track information */
+.track-info {
+  display: flex;
+  align-items: center;
+}
+
+.track-info img {
+  margin-right: 15px; /* Adjust spacing */
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+}
+
+.track-info div {
+  max-width: 300px;
+}
+
+.track-info h5,
+.track-info p {
+  margin-bottom: 0; /* Remove default margins */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-time {
+  font-size: 12px;
 }
 
 /* Responsive Design Adjustments */
@@ -231,14 +361,16 @@ small,
   }
 
   .user-info {
-    flex-direction: column; /* Stack the elements on smaller screens */
+    flex-direction: column;
   }
+
   .user-universe,
   .user-stats p {
-    margin: 0.5rem 0; /* Add space around elements on smaller screens */
+    margin: 0.5rem 0;
   }
+
   .btn-logout {
-    align-self: center; /* Center the logout button on smaller screens */
-    margin-top: 1rem; /* Add space above the logout button on smaller screens */
+    align-self: center;
+    margin-top: 1rem;
   }
 }

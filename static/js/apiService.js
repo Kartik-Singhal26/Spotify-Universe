@@ -28,11 +28,38 @@ const apiService = (function() {
         });
     };
 
+    const deleteTracksFromPlaylists = (trackIDs, playlistID) => {
+        // Assuming `apiService.baseUrl` is defined elsewhere and accessible
+        fetch(`${baseUrl}/playlist/delete-tracks`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            // Assuming the server expects both trackIds and playlistID in the request body
+            body: JSON.stringify({ trackIds: trackIDs, playlistId: playlistID }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Success:', data);
+            // Here you can add code to remove the tracks from the UI or notify the user
+            // For example, reload the track list to reflect the changes
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
     // Public API
     return {
         getAllPlaylists,
         getPlaylistDetails,
         getAllTracksForPlaylist,
+        deleteTracksFromPlaylists,
         baseUrl
     };
 })();
