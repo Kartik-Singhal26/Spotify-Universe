@@ -1,7 +1,9 @@
 $(document).ready(() => {
     const state = {
         userContentFetched: false,
-        selectedPlaylistId: null, // Make sure this is properly updated elsewhere in your script
+        selectedPlaylistId: null,
+        selectedPlaylists: [],
+        isComparing: false
     };
 
     function loadContent(page) {
@@ -9,10 +11,12 @@ $(document).ready(() => {
             url: `${apiService.baseUrl}/content/${page}`,
             type: "GET",
             success: (response) => {
+                console.log("Content loaded successfully.");
                 $('#main-content #content-placeholder').html(response);
                 executePageSpecificFunctions(page);
             },
             error: () => {
+                console.error("Error loading content.");
                 $('#main-content #content-placeholder').html("<p>Error loading content.</p>");
             }
         });
@@ -21,27 +25,19 @@ $(document).ready(() => {
     function executePageSpecificFunctions(page) {
         switch (page) {
             case 'playlists':
+                console.log("Fetching playlists...");
                 fetchAllPlaylists();
+                setupComparePlaylistButton();
                 break;
             case 'dashboard':
-                console.log("Dashboard under development");
+                console.log("Dashboard page under development.");
                 break;
             default:
                 console.error("Invalid page:", page);
         }
     }
 
-    function fetchAllPlaylists() {
-        apiService.getAllPlaylists()
-            .done((playlists) => {
-                templateRenderer.renderPlaylists(playlists);
-                setupPlaylistItemListeners();
-            })
-            .fail(() => {
-                console.error("Error fetching playlists.");
-            });
-    }
-
+    initNavControls();
     function initNavControls() {
         $('#sidebar-menu .nav-link').on('click', function (e) {
             e.preventDefault();
@@ -54,46 +50,124 @@ $(document).ready(() => {
         });
     }
 
-    function initCarouselControls() {
-        $(".carousel-control-prev, .carousel-control-next").click(function () {
-            const direction = $(this).hasClass("carousel-control-prev") ? "prev" : "next";
-            $("#carouselExampleControls").carousel(direction);
+    function fetchAllPlaylists() {
+        apiService.getAllPlaylists()
+            .done((playlists) => {
+                console.log("Playlists fetched successfully.");
+                templateRenderer.renderPlaylists(playlists);
+                // Playlist related listeners and controls initialization
+                setupPlaylistItemListeners();
+                makePlaylistsDraggable();
+            })
+            .fail(() => {
+                console.error("Error fetching playlists.");
+            });
+    }
+
+    function makePlaylistsDraggable() {
+        $(".playlist-item").draggable({
+            helper: "clone", // Creates a clone of the element for dragging
+            appendTo: "body", // Ensures the clone can move outside the playlist container
+            revert: "invalid", // Reverts to original position if not dropped in a droppable area
+            start: function (event, ui) {
+                $(ui.helper).css({
+                    "opacity": 0.7, // Making the clone slightly transparent
+                    "z-index": 100 // Ensuring it appears above other content
+                }).addClass("dragging");
+            }
         });
+        console.log("Playlists made draggable.");
+        initDroppableAreas(); // Ensure this is called after playlists are made draggable
     }
 
     function setupPlaylistItemListeners() {
         $("#playlistsContainer").on("click", ".playlist-item", function () {
-            const { playlistId, playlistName } = $(this).data();
-            $(".playlist-item").removeClass("selected-playlist");
-            $(this).addClass("selected-playlist");
-            state.selectedPlaylistId = playlistId; // Update the state with the selected playlist ID
-            displayPlaylistDetailsAndTracks(playlistId, playlistName);
+            const playlistId = $(this).data('playlist-id');
+            const playlistName = $(this).data('playlist-name');
+
+            if (!state.isComparing) {
+                console.log(`Displaying details for playlist ID: ${playlistId}`);
+                displayPlaylistDetailsAndTracks(playlistId, playlistName);
+            } else {
+                updateSelectedPlaylistsForComparison(playlistId, $(this));
+            }
+        });
+    }
+
+    function initDroppableAreas() {
+        $(".comparison-side").droppable({
+            accept: ".playlist-item", // Specifies which elements are accepted
+            tolerance: "pointer", // Uses the pointer's location to determine when the element is over the droppable
+            drop: function (event, ui) {
+                handleDrop($(this), ui.draggable);
+            }
+        });
+    }
+
+    function handleDrop(droppable, draggable) {
+        const playlistId = draggable.data("playlist-id");
+    
+        // Log dropping a new playlist for comparison
+        console.log(`Dropped playlist ID: ${playlistId} for comparison.`);
+    
+        // Fetch and display the new playlist details, overwriting any existing content
+        apiService.getPlaylistDetails(playlistId).then(playlistDetails => {
+            templateRenderer.renderPlaylistDetails(playlistDetails, droppable);
+        }).catch(error => {
+            console.error("Error fetching playlist details:", error);
+            droppable.html("<p>Error loading playlist details.</p>");
+        });
+    }
+
+    function setupComparePlaylistButton() {
+        $('#comparePlaylistsBtn').click(function () {
+            state.isComparing = !state.isComparing;
+            console.log(`Comparison mode: ${state.isComparing ? 'ON' : 'OFF'}`);
+
+            // Empty the playlist and comparison containers
+            $('#selected-playlist-container').empty();
+            $('#playlistDetails').empty();
+            $('#tracks-container').empty();
+
+            // Remove selection highlights from any previously selected playlists
+            $('.playlist-item').removeClass('selected-playlist');
+
+            // Reset the list of selected playlists in the state
+            state.selectedPlaylists = [];
         });
     }
 
     function displayPlaylistDetailsAndTracks(playlistId, playlistName) {
         templateRenderer.displayRandomMusicNoteOrPlaylistName(playlistName);
         apiService.getPlaylistDetails(playlistId)
-            .done((details) => templateRenderer.renderPlaylistDetails(details, playlistName))
-            .fail(() => $("#playlistDetails").html("<p>Error loading playlist details.</p>"));
-        apiService.getAllTracksForPlaylist(playlistId)
-            .done((tracks) => templateRenderer.renderTracks(tracks))
-            .fail(() => $("#tracks-container").html("<div class='list-group'><p>Error loading tracks.</p></div>"));
-        setupActionBar();
+            .done((details) => {
+                console.log(`Rendering details for ${playlistName}.`);
+                templateRenderer.renderPlaylistDetails(details, '#playlistDetails');
+            })
+            .fail(() => {
+                console.error(`Error loading details for playlist ${playlistName}.`);
+                $("#playlistDetails").html("<p>Error loading playlist details.</p>");
+            });
 
-        // Track selection mode toggling and track selection
+        apiService.getAllTracksForPlaylist(playlistId)
+            .done((tracks) => {
+                console.log(`Rendering tracks for ${playlistName}.`);
+                templateRenderer.renderTracks(tracks);
+                setupTrackSelectionListeners();
+            })
+            .fail(() => {
+                console.error(`Error loading tracks for playlist ${playlistName}.`);
+                $("#tracks-container").html("<div class='list-group'><p>Error loading tracks.</p></div>");
+            });
+        setupActionBar();
+    }
+
+    function setupTrackSelectionListeners() {
         $('#tracks-container').on('click', '.list-group-item', function (e) {
             if ($('#tracks-container').hasClass('selection-mode')) {
                 e.preventDefault(); // Prevent default action
                 $(this).toggleClass('selected');
-            }
-        });
-
-        // This handles clicks on any anchors within .list-group-item to prevent navigation
-        $('#tracks-container').on('click', '.list-group-item a', function (e) {
-            if ($('#tracks-container').hasClass('selection-mode')) {
-                e.preventDefault(); // Prevent the link from being followed
-                $(this).closest('.list-group-item').toggleClass('selected');
+                console.log('Track selection toggled.');
             }
         });
 
@@ -102,36 +176,59 @@ $(document).ready(() => {
         });
     }
 
-    function setupActionBar() {
-        $('#selectTracksBtn').click(function () {
-            $('#tracks-container').toggleClass('selection-mode');
-            $('#deleteTracksBtn').toggle(); // Optionally, toggle visibility based on selection-mode
-        });
+    function updateSelectedPlaylistsForComparison(playlistId, playlistItem) {
+        if (state.selectedPlaylists.includes(playlistId)) {
+            state.selectedPlaylists = state.selectedPlaylists.filter(id => id !== playlistId);
+            playlistItem.removeClass('selected-playlist');
+            console.log(`Playlist ID ${playlistId} deselected for comparison.`);
+        } else if (state.selectedPlaylists.length < 2) {
+            state.selectedPlaylists.push(playlistId);
+            playlistItem.addClass('selected-playlist');
+            console.log(`Playlist ID ${playlistId} selected for comparison.`);
+        }
 
-        setupDeleteTrackListener();
+        if (state.selectedPlaylists.length === 2) {
+            compareSelectedPlaylists(state.selectedPlaylists);
+        }
     }
 
     function setupDeleteTrackListener() {
         $('#deleteTracksBtn').click(function () {
-            let selectedTrackIds = $('#tracks-container .list-group-item.selected').map(function() {
-                // Retrieve the track ID stored in data-track-id
+            let selectedTrackIds = $('#tracks-container .list-group-item.selected').map(function () {
                 return $(this).data('track-id');
             }).get();
-        
 
             if (state.selectedPlaylistId && selectedTrackIds.length > 0) {
-                apiService.deleteTracksFromPlaylists(selectedTrackIds, state.selectedPlaylistId);
+                console.log('Deleting selected tracks...');
+                apiService.deleteTracksFromPlaylists(selectedTrackIds, state.selectedPlaylistId)
+                    .done(() => {
+                        console.log('Selected tracks deleted successfully.');
+                        // Optionally, refresh the playlist details or tracks here
+                    })
+                    .fail(() => {
+                        console.error('Failed to delete selected tracks.');
+                    });
             } else {
                 console.error('No playlistId defined or no tracks selected. Cannot delete tracks without a valid playlist ID and selected tracks.');
             }
         });
     }
 
-    // Assuming deleteTracksFromPlaylists is defined elsewhere and correctly communicates with the server
+    function setupActionBar() {
+        $('#selectTracksBtn').click(function () {
+            const isSelectionMode = $('#tracks-container').toggleClass('selection-mode').hasClass('selection-mode');
+            $('#deleteTracksBtn').toggle(isSelectionMode);
 
-    // Initialize UI controls
-    initCarouselControls();
-    initNavControls();
+            // Log the mode change for track selection
+            console.log(`Track selection mode: ${isSelectionMode ? 'Enabled' : 'Disabled'}`);
 
+            if (!isSelectionMode) {
+                $('#tracks-container .list-group-item').removeClass('selected');
+                console.log('All tracks deselected.');
+            }
+        });
 
+        setupDeleteTrackListener();
+    }
 });
+

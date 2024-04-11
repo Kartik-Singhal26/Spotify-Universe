@@ -267,27 +267,30 @@ small,
 }
 
 /* Action Bar Styling */
-.action-bar {
-  height: 30px;
-  display: flex;
-  border-radius: 4px;
-  align-items: center;
-  padding-left: 15px;
+.playlist-action-bar, .tracks-action-bar {
+  display: flex; /* Use Flexbox */
+  justify-content: space-around; /* Evenly distribute space around items */
+  align-items: center; /* Align items vertically */
+  width: 100%; /* Ensure the bar takes full width of its parent */
+  padding: 0.5rem;
   background-color: #121212; /* Light gray background */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
 }
 
-.action-bar i {
+.playlist-action-bar, .tracks-action-bar i {
   color: #1db954; /* Darker text/icon color for contrast */
+  border-color: #fff;
+  border-radius: 2px;
   margin-right: 10px; /* Spacing between icons */
   cursor: pointer; /* Change cursor on hover to indicate clickable */
+  display: flex;
 }
 
-.action-bar i:last-child {
+.playlist-action-bar, .tracks-action-bar i:last-child {
   margin-right: 0; /* Remove margin for the last icon */
 }
 
-.action-bar i:hover {
+.playlist-action-bar, .tracks-action-bar i:hover {
   color: #007bff; /* Highlight color on hover (Bootstrap primary color for reference) */
 }
 
@@ -346,10 +349,73 @@ small,
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.dragging {
+  opacity: 0.75;
+  z-index: 1000; /* Ensure the dragging element is above other content */
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2); /* More pronounced shadow for dragging */
+}
+
+/* Styling for selected playlists */
+.selected-playlist {
+  border-color: #007bff; /* Bootstrap primary blue for selection */
+  background-color: #e7f3ff; /* Light blue background for selected items */
+}
 
 .track-time {
   font-size: 12px;
 }
+#compare-playlist-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+#compare-playlist-container {
+  height: 350px; /* Ensures the container takes up 90% of the viewport height */
+  width: 100%; /* Adjusts the width to 90% of the viewport width, consider adjusting if necessary */
+  margin-bottom: 5px; /* Adjusted from 'bottom: 5;' which was incorrect */
+  overflow-x: hidden;
+  border: 2px solid #bbb;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: row;
+  overflow-y: hidden; /* Allows vertical scrolling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-color) var(--scroll-color);
+}
+
+.comparison-side {
+  width: 50%;
+  height: 100%; /* Ensures the container takes up 90% of the viewport height */
+  padding: 10px;
+  border: 2px solid #bbb;
+  background-color: #121212; /* White background for content areas */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Soft shadow for depth */
+  overflow-x: hidden;
+  overflow-y: hidden; /* Allows vertical scrolling */
+}
+
+/* Optional: Add hover effect for interactive feedback */
+.comparison-side:hover {
+  border-color: #bbb; /* Darker border on hover */
+}
+
+.icon-button {
+  flex: 1; /* Allows each button to grow equally to fill the container */
+  display: flex; /* Use Flexbox within each button */
+  justify-content: center; /* Center the icon horizontally */
+  align-items: center; /* Center the icon vertically */
+  padding: 0.5rem;
+  border: none; /* Removes the default button border */
+  background: none; /* Removes the default button background */
+  color: inherit; /* Inherits the text color from the parent */
+  cursor: pointer;
+}
+
+.icon-button i {
+  font-size: 1.5rem; /* Example size, adjust as needed */
+}
+
 
 /* Responsive Design Adjustments */
 @media (max-width: 768px) {

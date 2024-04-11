@@ -1,55 +1,122 @@
 <!-- playlist.html -->
 <div class="playlist-tab-container">
-    <!-- Include Playlist Carousel -->
-    <div class="row mt-1">
-        <div class="col-md-12 mb-2">
-            <div id="carouselExampleControls" class="carousel slide" data-ride="carousel" data-interval="5000">
-                <div class="carousel-inner" id="playlistsContainer">
-                    <!-- Playlists will be loaded dynamically here -->
-                </div>
-                <a class="carousel-control-prev" href="#carouselExampleControls" role="button" data-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="sr-only">Previous</span>
-                </a>
-                <a class="carousel-control-next" href="#carouselExampleControls" role="button" data-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="sr-only">Next</span>
-                </a>
-            </div>
+  <!-- Include Playlist Carousel -->
+  <div class="row mt-1">
+    <div class="col-md-12 mb-2">
+      <div
+        id="carouselExampleControls"
+        class="carousel slide"
+        data-ride="carousel"
+        data-interval="5000"
+      >
+        <div class="carousel-inner" id="playlistsContainer">
+          <!-- Playlists will be loaded dynamically here -->
         </div>
+        <a
+          class="carousel-control-prev"
+          href="#carouselExampleControls"
+          role="button"
+          data-slide="prev"
+        >
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="sr-only">Previous</span>
+        </a>
+        <a
+          class="carousel-control-next"
+          href="#carouselExampleControls"
+          role="button"
+          data-slide="next"
+        >
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="sr-only">Next</span>
+        </a>
+      </div>
     </div>
-    <div class="row mt-1">
-        <div class="col-md-3 mb-2">
-            <p></p>
-        </div>
-        <div class="col-md-9 mb-2">
-            <div class="action-bar">
-                <!-- Existing control icons -->
-                <!-- <i class="fas fa-play"></i>
-                <i class="fas fa-pause"></i>
-                <i class="fas fa-stop"></i>
-                <i class="fas fa-backward"></i>
-                <i class="fas fa-forward"></i>
-                <i class="fas fa-random"></i> -->
-                <!-- Select Tracks Icon -->
-                <i id="selectTracksBtn" class="fas fa-check-circle" title="Select Tracks"></i>
-                <!-- Delete Selected Tracks Icon -->
-                <i id="deleteTracksBtn" class="fas fa-trash-alt" title="Delete Selected Tracks" style="display:none;"></i>
-            </div>
-        </div>
-        
+  </div>
+  <div class="row mt-1">
+    <div class="col-md-3 mb-2">
+      <div class="playlist-action-bar">
+        <button
+          id="comparePlaylistsBtn"
+          class="icon-button"
+          title="Compare Playlists"
+          aria-label="Compare Playlists"
+        >
+          <i class="fas fa-exchange-alt"></i>
+        </button>
+      </div>
     </div>
+    <div class="col-md-9 mb-2">
+      <div class="tracks-action-bar">
+        <!-- Existing control icons wrapped in button elements for improved accessibility -->
+        <button id="playBtn" class="icon-button" title="Play" aria-label="Play">
+          <i class="fas fa-play"></i>
+        </button>
+        <button
+          id="pauseBtn"
+          class="icon-button"
+          title="Pause"
+          aria-label="Pause"
+        >
+          <i class="fas fa-pause"></i>
+        </button>
+        <button id="stopBtn" class="icon-button" title="Stop" aria-label="Stop">
+          <i class="fas fa-stop"></i>
+        </button>
+        <button
+          id="backwardBtn"
+          class="icon-button"
+          title="Previous Track"
+          aria-label="Previous Track"
+        >
+          <i class="fas fa-backward"></i>
+        </button>
+        <button
+          id="forwardBtn"
+          class="icon-button"
+          title="Next Track"
+          aria-label="Next Track"
+        >
+          <i class="fas fa-forward"></i>
+        </button>
+        <!-- Select Tracks Icon -->
+        <button
+          id="selectTracksBtn"
+          class="icon-button"
+          title="Select Tracks"
+          aria-label="Select Tracks"
+        >
+          <i class="fas fa-check-circle"></i>
+        </button>
+        <!-- Delete Selected Tracks Icon -->
+        <button
+          id="deleteTracksBtn"
+          class="icon-button"
+          title="Delete Selected Tracks"
+          aria-label="Delete Selected Tracks"
+          style="display: none"
+        >
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+    </div>
+  </div>
 
-    <div class="row mt-1">
-        <div class="selected-playlist-container">
-            <!-- Include Playlist Details -->
-            <div class="col-md-3 mb-2" id="playlistDetails">
-                <!-- Playlist details will be dynamically filled here -->
-            </div>
-            <div class="col-md-9 mb-2" id="tracks-container">
-                <!-- Playlist details will be dynamically filled here -->
-            </div>
-        </div>
+  <div class="row-mt-1">
+    <div id="compare-playlist-container">
+        <div class="comparison-side"></div>
+        <div class="comparison-side"></div>
     </div>
+  </div>
+  <div class="row mt-1">
+    <div class="selected-playlist-container">
+      <!-- Include Playlist Details -->
+      <div class="col-md-3 mb-2" id="playlistDetails">
+        <!-- Playlist details will be dynamically filled here -->
+      </div>
+      <div class="col-md-9 mb-2" id="tracks-container">
+        <!-- Playlist details will be dynamically filled here -->
+      </div>
+    </div>
+  </div>
 </div>
-

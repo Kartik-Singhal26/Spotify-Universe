@@ -28,12 +28,12 @@ const templateRenderer = {
         $("#playlistsContainer").html(playlistsHtml);
     },
 
-    renderPlaylistDetails: function (playlistDetails, playlistName) {
+    renderPlaylistDetails: function (playlistDetails, containerName) {
         const mostFeaturedArtists = playlistDetails.metrics['Most Featured Artist(s)'];
         const mostFeaturedArtistsText = Array.isArray(mostFeaturedArtists) ? mostFeaturedArtists.join(', ') : mostFeaturedArtists;
 
         const playlistDetailsHtml = `
-            <h2>${playlistName}</h2>
+            <h2>${playlistDetails.name}</h2>
             <p>${playlistDetails.description}</p>
             <p><strong>Total Tracks:</strong> ${playlistDetails.metrics['Track Count']}</p>
             <p><strong>Total Duration:</strong> ${playlistDetails.metrics['Total Duration']} hrs</p>
@@ -42,8 +42,9 @@ const templateRenderer = {
             <p><strong>Release Year Range:</strong> ${playlistDetails.metrics['Release Year Range']}</p>
         `;
 
-        $("#playlistDetails").html(playlistDetailsHtml);
+        $(containerName).html(playlistDetailsHtml);
     },
+
 
     renderTracks: function(tracks) {
         let tracksHtml = "<div class='list-group'>";
